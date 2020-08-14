@@ -4,32 +4,40 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.Instant;
 
 @Entity
 @Getter
 @Setter
-public class Permission {
+public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private String name;
+    private Long id;
 
-    @ManyToMany(mappedBy = "permissions")
-    private Set<Role> roles = new HashSet<>();
+    private int rating;
+    private String intent;
+    private String content;
+    private Instant createdDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Product product;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Permission that = (Permission) o;
-        return id == that.id ;
+        Review review = (Review) o;
+        return id.equals(review.id);
     }
 
     @Override
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
     }
+
+
 }
