@@ -4,6 +4,7 @@ import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.domain.Question;
 import bnorbert.onlineshop.domain.User;
 import bnorbert.onlineshop.transfer.questionsAndAnswers.QuestionDto;
+import bnorbert.onlineshop.transfer.questionsAndAnswers.QuestionResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -17,4 +18,11 @@ public abstract class QuestionMapper {
     @Mapping(target = "user", source = "user")
     public abstract Question map(QuestionDto questionDto, Product product, User user);
 
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "text", source = "question.text")
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "productId", source = "product.id")
+    @Mapping(target = "createdDate", source = "question.createdDate")
+    public abstract QuestionResponse mapToDto(Question question);
 }

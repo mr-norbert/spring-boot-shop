@@ -27,5 +27,4 @@ public class Vote {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-
 }
