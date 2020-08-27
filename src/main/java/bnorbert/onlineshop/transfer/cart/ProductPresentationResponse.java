@@ -14,5 +14,4 @@ public class ProductPresentationResponse {
     private double price;
     private String description;
     private String imagePath;
-
 }

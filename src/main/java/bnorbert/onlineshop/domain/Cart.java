@@ -14,12 +14,16 @@ public class Cart {
 
     @Id
     private long id;
-    private double grandTotal;
+    private Double grandTotal;
     private int numberOfProducts;
+    private double savedAmount;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Discount discount;
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
     @JoinTable(name = "cart_products",
@@ -37,8 +41,17 @@ public class Cart {
         product.getCarts().remove(this);
     }
 
-    public Double getGrandTotal() {
+    public Double getSum() {
         double sum = 0D;
+        Set<Product> products = getProducts();
+        for (Product product : products){
+            sum += product.getProductTotal();
+        }
+        return sum;
+    }
+
+    public Integer getSumForStripe() {
+        int sum = 0;
         Set<Product> products = getProducts();
         for (Product product : products){
             sum += product.getProductTotal();
