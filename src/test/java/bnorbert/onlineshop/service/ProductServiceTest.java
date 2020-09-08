@@ -2,10 +2,16 @@ package bnorbert.onlineshop.service;
 
 import bnorbert.onlineshop.domain.Category;
 import bnorbert.onlineshop.domain.Product;
+import bnorbert.onlineshop.domain.User;
+import bnorbert.onlineshop.domain.View;
 import bnorbert.onlineshop.mapper.ProductMapper;
+import bnorbert.onlineshop.mapper.ViewMapper;
 import bnorbert.onlineshop.repository.ProductRepository;
+import bnorbert.onlineshop.repository.ViewRepository;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
+import bnorbert.onlineshop.transfer.product.UpdateResponse;
+import org.apache.hadoop.hdfs.protocol.proto.InterDatanodeProtocolProtos;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -32,13 +38,19 @@ class ProductServiceTest {
     private ProductMapper mockProductMapper;
     @Mock
     private CategoryService mockCategoryService;
+    @Mock
+    private ViewRepository mockViewRepository;
+    @Mock
+    private UserService mockUserService;
+    @Mock
+    private ViewMapper mockViewMapper;
 
     private ProductService productServiceUnderTest;
 
     @BeforeEach
     void setUp() {
         initMocks(this);
-        productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockCategoryService);
+        productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockCategoryService, mockViewRepository, mockUserService, mockViewMapper);
     }
 
     @Test
@@ -67,6 +79,22 @@ class ProductServiceTest {
     }
 
     @Test
+    void testGetProductId2() {
+        final ProductResponse expectedResult = new ProductResponse();
+
+        when(mockProductRepository.findById(1L)).thenReturn(Optional.of(new Product()));
+        when(mockViewMapper.map(any(Product.class), eq(new User()))).thenReturn(new View());
+        when(mockUserService.getCurrentUser()).thenReturn(new User());
+        when(mockViewRepository.save(any(View.class))).thenReturn(new View());
+        when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
+
+        final ProductResponse result = productServiceUnderTest.getProductId(1L);
+
+        assertThat(result).isEqualTo(expectedResult);
+    }
+
+
+    @Test
     void testGetProduct() {
         final Product expectedResult = new Product();
         when(mockProductRepository.findById(1L)).thenReturn(Optional.of(new Product()));
@@ -90,11 +118,11 @@ class ProductServiceTest {
     void testUpdateProduct() {
         final ProductDto request = new ProductDto();
 
-        final ProductResponse expectedResult = new ProductResponse();
+        final UpdateResponse expectedResult = new UpdateResponse();
         when(mockProductRepository.findById(1L)).thenReturn(Optional.of(new Product()));
-        when(mockProductMapper.mapToDto(new Product())).thenReturn(new ProductResponse());
+        when(mockProductMapper.mapToDto2(new Product())).thenReturn(new UpdateResponse());
 
-        final ProductResponse result = productServiceUnderTest.updateProduct(1L, request);
+        final UpdateResponse result = productServiceUnderTest.updateProduct(1L, request);
 
         assertThat(result).isEqualTo(expectedResult);
     }
@@ -135,4 +163,5 @@ class ProductServiceTest {
         final Page<ProductResponse> result = productServiceUnderTest.getProductsByCategoryId(1L, PageRequest.of(0, 1));
 
     }
+
 }

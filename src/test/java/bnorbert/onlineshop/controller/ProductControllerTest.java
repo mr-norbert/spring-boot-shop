@@ -3,6 +3,7 @@ package bnorbert.onlineshop.controller;
 import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
+import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -61,10 +62,10 @@ class ProductControllerTest {
 
         final ProductDto request = new ProductDto();
 
-        final ResponseEntity<ProductResponse> expectedResult = new ResponseEntity<>(new ProductResponse(), HttpStatus.OK);
-        when(mockProductService.updateProduct(eq(1L), any(ProductDto.class))).thenReturn(new ProductResponse());
+        final ResponseEntity<UpdateResponse> expectedResult = new ResponseEntity<>(new UpdateResponse(), HttpStatus.OK);
+        when(mockProductService.updateProduct(eq(1L), any(ProductDto.class))).thenReturn(new UpdateResponse());
 
-        final ResponseEntity<ProductResponse> result = productControllerUnderTest.updateProduct(1L, request);
+        final ResponseEntity<UpdateResponse> result = productControllerUnderTest.updateProduct(1L, request);
 
         assertThat(result).isEqualTo(expectedResult);
     }

@@ -2,6 +2,10 @@ package bnorbert.onlineshop.domain;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.Instant;
@@ -11,6 +15,9 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
+
+@EntityListeners(AuditingEntityListener.class)
+
 public class Product {
 
     @Id
@@ -23,6 +30,13 @@ public class Product {
     private String imagePath;
     private int unitInStock;
     private Instant createdDate;
+    @CreatedBy
+    private String createdBy;
+    @LastModifiedBy
+    private String lastModifiedBy;
+    @LastModifiedDate
+    private Instant lastModifiedDate = Instant.now();
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Category category;

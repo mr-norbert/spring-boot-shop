@@ -5,6 +5,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.model.jdbc.MySQLJDBCDataModel;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
+import org.apache.mahout.cf.taste.impl.similarity.CityBlockSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.TanimotoCoefficientSimilarity;
 import org.apache.mahout.cf.taste.model.JDBCDataModel;
@@ -62,8 +63,21 @@ public class OnlineShopApplication {
 			}
 		}
 
- */
 
+		System.out.println("Manhattan distance");
+		ItemSimilarity sim2 = new CityBlockSimilarity(model);
+		GenericItemBasedRecommender generic2 = new GenericItemBasedRecommender(model, sim2);
+
+		for (LongPrimitiveIterator items = model.getItemIDs(); items.hasNext(); ) {
+			long itemId = items.nextLong();
+			List<RecommendedItem> someRecommendations = generic2.mostSimilarItems(itemId, 4);
+
+			for (RecommendedItem recommendation : someRecommendations) {
+				System.out.println(itemId + "," + recommendation.getItemID() + "," + recommendation.getValue());
+			}
+		}
+
+ */
 
 	}
 

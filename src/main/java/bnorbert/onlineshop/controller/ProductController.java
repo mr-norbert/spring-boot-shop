@@ -3,6 +3,7 @@ package bnorbert.onlineshop.controller;
 import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
+import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,12 +35,14 @@ public class ProductController {
         return status(HttpStatus.OK).body(productService.getProductId(id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponse> updateProduct(
+
+    @PutMapping("/update{id}")
+    public ResponseEntity<UpdateResponse> updateProduct(
             @PathVariable("id") long id, @RequestBody @Valid ProductDto request){
-        ProductResponse product = productService.updateProduct(id, request);
+        UpdateResponse product = productService.updateProduct(id, request);
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity deleteProduct(@PathVariable("id") long id) {

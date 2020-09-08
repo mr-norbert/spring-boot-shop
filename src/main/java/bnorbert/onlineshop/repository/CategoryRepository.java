@@ -1,6 +1,5 @@
 package bnorbert.onlineshop.repository;
 
-
 import bnorbert.onlineshop.domain.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
