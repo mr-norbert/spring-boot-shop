@@ -14,7 +14,6 @@ public class User {
 
     private String email;
     private String password;
-    @Transient
     private String passwordConfirm;
     private boolean enabled;
     private boolean accountNonExpired;
@@ -40,7 +39,6 @@ public class User {
         verificationTokens.add(verificationToken);
         verificationToken.setUser(this);
     }
-
 
     public User() {
     }

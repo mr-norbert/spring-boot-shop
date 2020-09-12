@@ -4,6 +4,7 @@ import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.ItemMapper;
+import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.CopyOfTheProductRepository;
 import bnorbert.onlineshop.transfer.cart.*;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -33,10 +33,12 @@ public class CartService {
     private final CartMapper cartMapper;
     private final DiscountService discountService;
     private final ItemMapper itemMapper;
+    private final CartItemRepository cartItemRepository;
+
 
     public CartService(CartRepository cartRepository, UserService userService, ProductService productService,
                        CopyOfTheProductRepository copyOfTheProductRepository, CartMapper cartMapper, DiscountService discountService,
-                       ItemMapper itemMapper) {
+                       ItemMapper itemMapper, CartItemRepository cartItemRepository) {
         this.cartRepository = cartRepository;
         this.userService = userService;
         this.productService = productService;
@@ -44,148 +46,69 @@ public class CartService {
         this.cartMapper = cartMapper;
         this.discountService = discountService;
         this.itemMapper = itemMapper;
+        this.cartItemRepository = cartItemRepository;
     }
 
-
     @Transactional
-    public AddToCartResponse addProductToCart(AddProductToCartRequest request) {
+    public Page<AddToCartResponse> addProductToCartPageableForSlider(AddProductToCartRequest request, Pageable pageable) {
         log.info("Adding product to cart: {}", request);
-
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-        if (cart.getUser() == null) {
-            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
-            User user = userService.getUser(userService.getCurrentUser().getId());
-            cart.setUser(user);
-        }
 
         //Item-based Recommender -> OnlineShopApplication
-        CopyOfTheProduct copyOfTheProduct = copyOfTheProductRepository
-                .findById(request.getProductId()).orElse(null);
-
-
-        AddToCartResponse addToCartResponse = new AddToCartResponse();
-        if (copyOfTheProduct != null) {
-            addToCartResponse.setId(copyOfTheProduct.getId());
-
-            for (Product product : copyOfTheProduct.getProducts()) {
-                ProductPresentationResponse productPresentationResponse = new ProductPresentationResponse();
-
-                productPresentationResponse.setId(product.getId());
-                productPresentationResponse.setName(product.getName());
-                productPresentationResponse.setPrice(product.getPrice());
-                productPresentationResponse.setQuantity(product.getQuantity());
-                productPresentationResponse.setDescription(product.getDescription());
-                productPresentationResponse.setImagePath(product.getImagePath());
-
-                addToCartResponse.getProducts().add(productPresentationResponse);
-            }
-
-        }
-
-
-        Product product = productService.getProduct(request.getProductId());
-        if(product.getQuantity() > product.getUnitInStock()) {
-            product.setQuantity(product.getUnitInStock());
-            log.info("Not so much quantity in stock for this product");
-        }
-
-        cart.addToCart(product);
-        cart.setNumberOfProducts(cart.getNumberOfProducts());
-        cart.setGrandTotal(cart.getSum());
-        cartRepository.save(cart);
-
-
-        return addToCartResponse;
-    }
-
-
-
-    @Transactional
-    public Page<AddToCartResponse> addProductToCartPageable(AddProductToCartRequest request, Pageable pageable) {
-        log.info("Adding product to cart: {}", request);
-
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-        if (cart.getUser() == null) {
-            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
-            User user = userService.getUser(userService.getCurrentUser().getId());
-            cart.setUser(user);
-        }
-
         Page<CopyOfTheProduct> copyOfTheProducts = copyOfTheProductRepository
                 .findById(request.getProductId(), pageable);
 
-        Product product = productService.getProduct(request.getProductId());
-        if(product.getQuantity() > product.getUnitInStock()) {
-            product.setQuantity(product.getUnitInStock());
-            log.info("Not so much quantity in stock for this product");
+        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
+                .orElse(new Cart());
+        if (cart.getUser() == null) {
+            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
+            User user = userService.getUser(userService.getCurrentUser().getId());
+            cart.setUser(user);
+            cartRepository.save(cart);
         }
 
-        cart.addToCart(product);
-        cart.setNumberOfProducts(cart.getNumberOfProducts());
-        cart.setGrandTotal(cart.getSum());
-        cartRepository.save(cart);
+        Product product = productService.getProduct(request.getProductId());
 
+        Optional<CartItem> productAndUser = cartItemRepository
+                .findTopByProductAndCartOrderByIdDesc(product, cart);
+        CartItem cartItem;
+        if(productAndUser.isPresent()){
+            cartItem = cartItemRepository.
+                    findTop1ByProductIdAndCartOrderByIdDesc(request.getProductId(), cart)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Product " + request.getProductId() +
+                                    "and UserId " + userService.getCurrentUser().getId() +
+                                    "not found. "));
+            cartItem.setQty(cartItem.getQty() + request.getProductQuantity());
+            cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
+            cartItemRepository.save(cartItem);
+            cart.setGrandTotal(cart.getSum());
+        }else {
+            cartItem = cartMapper.map(request, cart, product);
+            cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
+            cartItemRepository.save(cartItem);
+            cart.setGrandTotal(cart.getSum());
+        }
+        cartRepository.save(cart);
 
         List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(copyOfTheProducts.getContent());
         return new PageImpl<>(addToCartResponses, pageable, copyOfTheProducts.getTotalElements());
+
     }
 
 
-    @Transactional
-    public DiscountResponse addDiscount(DiscountRequest request){
-        log.info("Adding discount to cart: {}", request);
+    public void saveCartItem(CartItem cartItem) {
+        cartItemRepository.save(cartItem);
+    }
 
-        Discount discount = discountService.getDiscount(request.getDiscountId());
+    public void clearCart(Cart cart) {
+        List<CartItem> cartItemList = cartItemRepository.findByCart(cart);
 
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-        if (cart.getUser() == null) {
-            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
-            User user = userService.getUser(userService.getCurrentUser().getId());
-            cart.setUser(user);
+        for (CartItem cartItem : cartItemList) {
+            cartItem.setCart(null);
+            saveCartItem(cartItem);
         }
-
-        if(currentDate().isAfter(discount.getExpirationDate())){
-            throw new ResourceNotFoundException("Discount expired "
-                    + discount.getExpirationDate());
-        }
-
-        discount.addCart(cart);
-
-        cart.setSavedAmount(discount.getPercentOff() * cart.getSum());
-        cart.setNumberOfProducts(cart.getNumberOfProducts());
-        cart.setGrandTotal(cart.getSum() - cart.getSavedAmount());
+        cart.setGrandTotal(0d);
         cartRepository.save(cart);
-
-        return cartMapper.mapToDto2(cart);
-    }
-
-    private Instant currentDate(){
-        return Instant.now();
-    }
-
-
-
-    @Transactional
-    public DiscountResponse removeDiscount(DiscountRequest request){
-        log.info("Removing discount from cart: {}", request);
-
-        Discount discount = discountService.getDiscount(request.getDiscountId());
-
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-        if (cart.getUser() == null) {
-            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
-            User user = userService.getUser(userService.getCurrentUser().getId());
-            cart.setUser(user);
-        }
-
-        discount.removeCart(cart);
-        cartRepository.save(cart);
-
-        return cartMapper.mapToDto2(cart);
     }
 
 
@@ -196,80 +119,59 @@ public class CartService {
         Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "There is no cart for user " + userService.getCurrentUser().getId()));
-/*
-        CartResponse cartResponse = new CartResponse();
-        cartResponse.setId(cart.getId());
 
-        for (Product product : cart.getProducts()) {
-            ProductInCartResponse productInCartResponse = new ProductInCartResponse();
+        cartRepository.save(cart);
 
-            productInCartResponse.setId(product.getId());
-            productInCartResponse.setName(product.getName());
-            productInCartResponse.setPrice(product.getPrice());
-            productInCartResponse.setQuantity(product.getQuantity());
-            productInCartResponse.setUnitInStock(product.getUnitInStock());
-            productInCartResponse.setProductTotal(product.getPrice() * product.getQuantity());
-
-            cartResponse.getProducts().add(productInCartResponse);
-            cartResponse.getNumberOfProducts();
-            cartResponse.getGrandTotal();
-        }
-
-        return cartResponse;
-
- */
         return cartMapper.mapToDto(cart);
     }
 
+
+    @Transactional
+    public void updateCart(UpdateQuantityRequest request) {
+        log.info("Updating cart: {}", request);
+
+        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "There is no cart for user " + userService.getCurrentUser().getId()));
+
+        Product product = productService.getProduct(request.getProductId());
+
+        CartItem cartItem = cartItemRepository.findTop1ByProductIdAndCartOrderByIdDesc(request.getProductId(),
+                cart).orElseThrow(() -> new ResourceNotFoundException(
+                "Product " + request.getProductId() +
+                        "and UserId " + userService.getCurrentUser().getId() +
+                        "not found. "));
+
+        cartItem.setQty(request.getQty());
+        cartItem.setSubTotal(product.getPrice() * request.getQty());
+
+        cartItemRepository.save(cartItem);
+        cart.setGrandTotal(cart.getSum());
+        cartRepository.save(cart);
+
+
+    }
 
     @Transactional
     public void removeProductFromCart(RemoveProductFromCartRequest request){
         log.info("Removing product from cart: {}", request);
 
         Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-        if (cart.getUser() == null) {
-            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
-            User user = userService.getUser(userService.getCurrentUser().getId());
-            cart.setUser(user);
-        }
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "There is no cart for user " + userService.getCurrentUser().getId()));
 
-        Product product = productService.getProduct(request.getProductId());
+        CartItem cartItem = cartItemRepository.findTop1ByProductIdAndCartOrderByIdDesc(request.getProductId(),
+                cart).orElseThrow(() -> new ResourceNotFoundException(
+                "Product " + request.getProductId() +
+                        "and UserId " + userService.getCurrentUser().getId() +
+                        "not found. "));
 
-        cart.removeFromCart(product);
-        cart.setNumberOfProducts(cart.getNumberOfProducts());
+        cart.removeCartItem(cartItem);
+        cartItemRepository.save(cartItem);
         cart.setGrandTotal(cart.getSum());
 
         cartRepository.save(cart);
     }
-
-
-    @Transactional
-    public CartResponse updateCart(UpdateQuantityRequest request) {
-        log.info("Updating cart: {}", request);
-
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElse(new Cart());
-
-        if (cart.getUser() != null ) {
-            Product product = productService.getProduct(request.getProductId());
-            product.setQuantity(request.getProductQuantity());
-
-            if (product.getQuantity() > product.getUnitInStock()) {
-                product.setQuantity(product.getUnitInStock());
-                log.info("Not so much quantity in stock for this product");
-            } else if (product.getQuantity() <= 0) {
-                throw new ResourceNotFoundException("One is minimum minimorum.");
-            }
-        }
-
-        cart.setGrandTotal(cart.getSum());
-        cart.setNumberOfProducts(cart.getNumberOfProducts());
-        cartRepository.save(cart);
-
-        return cartMapper.mapToDto(cart);
-    }
-
 
 
     @Transactional

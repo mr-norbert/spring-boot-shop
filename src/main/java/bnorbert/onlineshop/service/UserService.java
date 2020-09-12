@@ -63,10 +63,12 @@ public class UserService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordConfirm(passwordEncoder.encode(request.getPasswordConfirm()));
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
         user.setEnabled(false);
+        user.setCreatedDate(Instant.now());
 
         VerificationToken verificationToken = new VerificationToken(user);
         user.addToken(verificationToken);

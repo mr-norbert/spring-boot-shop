@@ -13,10 +13,9 @@ import java.util.Set;
 public class CartResponse {
     private long id;
     private double grandTotal;
-    private int numberOfProducts;
+    private Set<CartItemsResponse> cartItems = new HashSet<>();
     private Long userId;
     private String userEmail;
-    private Set<ProductPresentationResponse> products = new HashSet<>();
 
 /*
     public Double getGrandTotal() {

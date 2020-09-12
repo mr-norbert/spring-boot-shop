@@ -40,6 +40,7 @@ public class ProductService {
         this.viewMapper = viewMapper;
     }
 
+    @Transactional
     public void save(ProductDto request) {
         log.info("Creating product: {}",request);
         Category category = categoryService.getCategory(request.getCategoryId());

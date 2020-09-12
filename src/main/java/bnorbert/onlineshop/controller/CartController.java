@@ -1,5 +1,6 @@
 package bnorbert.onlineshop.controller;
 
+import bnorbert.onlineshop.domain.CartItem;
 import bnorbert.onlineshop.service.CartService;
 import bnorbert.onlineshop.transfer.cart.*;
 import com.stripe.exception.StripeException;
@@ -26,18 +27,34 @@ public class CartController {
     }
 
     @PutMapping("/discoverAdditionalProducts")
-    public ResponseEntity<AddToCartResponse> addProductToCart(
-            @RequestBody @Valid AddProductToCartRequest request) {
-        AddToCartResponse carts = cartService.addProductToCart(request);
+    public ResponseEntity<Page<AddToCartResponse>> addProductToCart(
+            @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
+        Page<AddToCartResponse> carts = cartService.addProductToCartPageableForSlider(request, pageable);
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
-    @PutMapping("/discoverProductsPageable")
-    public ResponseEntity<Page<AddToCartResponse>> addProductToCart(
-            @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
-        Page<AddToCartResponse> carts = cartService.addProductToCartPageable(request, pageable);
-        return new ResponseEntity<>(carts, HttpStatus.OK);
+    @GetMapping("/getCart")
+    public ResponseEntity<CartResponse> getCart() {
+        CartResponse cart = cartService.getCart();
+        return new ResponseEntity<>(cart, HttpStatus.OK);
     }
+
+
+    @PutMapping("/update")
+    public ResponseEntity<CartItem> updateCart(
+            @RequestBody @Valid UpdateQuantityRequest request) {
+        cartService.updateCart(request);
+        return new ResponseEntity<>( HttpStatus.OK);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> removeProductFromCart(
+            @RequestBody @Valid RemoveProductFromCartRequest request) {
+        cartService.removeProductFromCart(request);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+/*
 
     @PutMapping("/discount")
     public ResponseEntity<DiscountResponse> addDiscount(
@@ -53,25 +70,7 @@ public class CartController {
         return new ResponseEntity<>(cart, HttpStatus.OK);
     }
 
-    @GetMapping("/getCart")
-    public ResponseEntity<CartResponse> getCart() {
-        CartResponse cart = cartService.getCart();
-        return new ResponseEntity<>(cart, HttpStatus.OK);
-    }
-
-    @DeleteMapping
-    public ResponseEntity<Void> removeProductFromCart(
-            @RequestBody @Valid RemoveProductFromCartRequest request) {
-        cartService.removeProductFromCart(request);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @PutMapping("/updateCart")
-    public ResponseEntity<CartResponse> updateCart(
-            @RequestBody @Valid UpdateQuantityRequest request) {
-        CartResponse cart = cartService.updateCart(request);
-        return new ResponseEntity<>(cart, HttpStatus.OK);
-    }
+ */
 
     @PostMapping("/paymentIntent")
     public ResponseEntity<String> payment(@RequestBody PaymentIntentDto request) throws StripeException {
@@ -93,6 +92,5 @@ public class CartController {
         String paymentStr = paymentIntent.toJson();
         return new ResponseEntity<String>(paymentStr, HttpStatus.OK);
     }
-
 
 }

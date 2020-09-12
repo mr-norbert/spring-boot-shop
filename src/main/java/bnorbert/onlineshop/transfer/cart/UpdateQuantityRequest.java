@@ -1,19 +1,34 @@
 package bnorbert.onlineshop.transfer.cart;
 
-import lombok.Getter;
-import lombok.Setter;
+import bnorbert.onlineshop.exception.ResourceNotFoundException;
+
 import lombok.ToString;
 
 import javax.validation.constraints.NotNull;
 
-@Getter
-@Setter
 @ToString
 public class UpdateQuantityRequest {
 
     @NotNull
     private Long productId;
     @NotNull
-    private int productQuantity;
+    private int qty;
 
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public int getQty() {
+        if (qty <= 0) {
+            throw new ResourceNotFoundException("One is minimum-minimorum");
+        }else return qty;
+    }
+
+    public void setQty(int qty) {
+        this.qty = qty;
+    }
 }

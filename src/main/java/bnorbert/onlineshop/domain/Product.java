@@ -37,19 +37,11 @@ public class Product {
     @LastModifiedDate
     private Instant lastModifiedDate = Instant.now();
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
 
     @ManyToMany(mappedBy = "products")
-    private Set<Cart> carts = new HashSet<>();
-
-    @ManyToMany(mappedBy = "products")
     private Set<CopyOfTheProduct> copyOfTheProducts = new HashSet<>();
-
-    public double getProductTotal() {
-        return price * quantity;
-    }
 
     //@Override
     //public boolean equals(Object o) {
