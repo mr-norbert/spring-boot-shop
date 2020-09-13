@@ -3,10 +3,7 @@ package bnorbert.onlineshop.service;
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 import bnorbert.onlineshop.mapper.OrderMapper;
-import bnorbert.onlineshop.repository.CartItemRepository;
-import bnorbert.onlineshop.repository.CartRepository;
-import bnorbert.onlineshop.repository.OrderRepository;
-import bnorbert.onlineshop.repository.ShippingAddressRepository;
+import bnorbert.onlineshop.repository.*;
 import bnorbert.onlineshop.transfer.order.OrderDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,11 +24,13 @@ public class OrderService {
     private final ShippingAddressRepository shippingAddressRepository;
     private final CartItemRepository cartItemRepository;
     private final ShippingAddressService shippingAddressService;
+    private final ProductRepository productRepository;
 
     public OrderService(OrderRepository orderRepository, CartService cartService, CartRepository cartRepository,
-                        UserService userService, OrderMapper orderMapper, ShippingAddressRepository shippingAddressRepository,
+                        UserService userService, OrderMapper orderMapper,
+                        ShippingAddressRepository shippingAddressRepository,
                         CartItemRepository cartItemRepository,
-                        ShippingAddressService shippingAddressService) {
+                        ShippingAddressService shippingAddressService, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.cartRepository = cartRepository;
@@ -40,6 +39,7 @@ public class OrderService {
         this.shippingAddressRepository = shippingAddressRepository;
         this.cartItemRepository = cartItemRepository;
         this.shippingAddressService = shippingAddressService;
+        this.productRepository = productRepository;
     }
 
 
@@ -66,6 +66,13 @@ public class OrderService {
 
         for(CartItem cartItem : cartItemList) {
             order.addCartItem(cartItem);
+            Product product = cartItem.getProduct();
+
+            product.setUnitInStock(product.getUnitInStock() - cartItem.getQty());
+            if(product.getUnitInStock() < 0){
+                throw new ResourceNotFoundException("Not so much quantity in stock");
+            }
+            productRepository.save(product);
             cartItemRepository.save(cartItem);
             orderRepository.save(order);
         }

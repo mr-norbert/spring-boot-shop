@@ -43,7 +43,8 @@ public class Product {
     @ManyToMany(mappedBy = "products")
     private Set<CopyOfTheProduct> copyOfTheProducts = new HashSet<>();
 
-    //@Override
+
+//@Override
     //public boolean equals(Object o) {
     //    if (this == o) return true;
     //    if (o == null || getClass() != o.getClass()) return false;
