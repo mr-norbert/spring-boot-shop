@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -53,7 +54,20 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id.toString()));
 
-        View view = viewMapper.map(product, userService.getCurrentUser());
+        Optional<View> productAndUser = viewRepository
+                .findTopByProductAndUserOrderByIdDesc(product, userService.getCurrentUser());
+
+        View view;
+        if (productAndUser.isPresent()){
+            view = viewRepository.findTop1ByProductAndUserOrderByIdDesc(product, userService.getCurrentUser())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("ProductId " + id
+                                    + " and userId" + userService.getCurrentUser().getId()
+                                    + " not found"));
+            view.setViewCount(view.getViewCount() + 1);
+        }else {
+            view = viewMapper.map(product, userService.getCurrentUser());
+        }
         viewRepository.save(view);
 
         return productMapper.mapToDto(product);

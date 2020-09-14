@@ -50,8 +50,7 @@ public class ShippingAddressService {
         Optional<ShippingAddress> addressAndUser = shippingAddressRepository.
                 findTopByIdAndUser(id, userService.getCurrentUser());
         if (!addressAndUser.isPresent()) {
-            throw new ResourceNotFoundException("Cannot update the address of others"
-                    + userService.getCurrentUser().getId());
+            throw new ResourceNotFoundException("Cannot update the address of others");
         }
 
         BeanUtils.copyProperties(request, address);

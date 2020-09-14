@@ -84,7 +84,9 @@ class ProductServiceTest {
 
         when(mockProductRepository.findById(1L)).thenReturn(Optional.of(new Product()));
         when(mockViewMapper.map(any(Product.class), eq(new User()))).thenReturn(new View());
+        when(mockViewRepository.findTopByProductAndUserOrderByIdDesc(any(Product.class), eq(new User()))).thenReturn(Optional.of(new View()));
         when(mockUserService.getCurrentUser()).thenReturn(new User());
+        when(mockViewRepository.findTop1ByProductAndUserOrderByIdDesc(any(Product.class), eq(new User()))).thenReturn(Optional.of(new View()));
         when(mockViewRepository.save(any(View.class))).thenReturn(new View());
         when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
 
