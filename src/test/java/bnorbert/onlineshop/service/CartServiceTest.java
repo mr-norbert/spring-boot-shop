@@ -79,7 +79,6 @@ class CartServiceTest {
         cartItem1.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(0);
         product.setName("name");
         product.setPrice(5.0);
         product.setDescription("description");
@@ -114,7 +113,6 @@ class CartServiceTest {
         cartItem.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(0);
         product.setName("name");
         product.setPrice(5.0);
         product.setDescription("description");
@@ -146,7 +144,6 @@ class CartServiceTest {
         cartItem.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(1);
         product.setName("name");
         product.setPrice(20.0);
         product.setDescription("description");
@@ -200,7 +197,6 @@ class CartServiceTest {
         cartItem1.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(0);
         product.setName("name");
         product.setPrice(4.0);
         product.setDescription("description");
@@ -243,7 +239,6 @@ class CartServiceTest {
         cartItem1.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(0);
         product.setName("name");
         product.setPrice(5.0);
         product.setDescription("description");

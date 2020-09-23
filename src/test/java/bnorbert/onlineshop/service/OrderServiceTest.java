@@ -69,7 +69,6 @@ class OrderServiceTest {
         cartItem.setCreatedBy("createdBy");
         final Product product = new Product();
         product.setId(1L);
-        product.setQuantity(1);
         product.setName("name");
         product.setPrice(1.0);
         product.setDescription("description");

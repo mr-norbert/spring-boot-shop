@@ -14,7 +14,6 @@ import java.util.List;
 public abstract class ProductMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "quantity", source = "productDto.quantity")
     @Mapping(target = "name", source = "productDto.name")
     @Mapping(target = "price", source = "productDto.price")
     @Mapping(target = "description", source = "productDto.description")
@@ -25,7 +24,6 @@ public abstract class ProductMapper {
     public abstract Product map(ProductDto productDto, Category category);
 
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "quantity", source = "product.quantity")
     @Mapping(target = "name", source = "product.name")
     @Mapping(target = "price", source = "product.price")
     @Mapping(target = "description", source = "product.description")
@@ -36,7 +34,6 @@ public abstract class ProductMapper {
     public abstract ProductResponse mapToDto(Product product);
 
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "quantity", source = "product.quantity")
     @Mapping(target = "name", source = "product.name")
     @Mapping(target = "price", source = "product.price")
     @Mapping(target = "description", source = "product.description")

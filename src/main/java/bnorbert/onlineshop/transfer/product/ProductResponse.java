@@ -12,7 +12,6 @@ import java.time.Instant;
 public class ProductResponse {
     private Long id;
     private String name;
-    private int quantity;
     private double price;
     private String description;
     private String imagePath;
@@ -29,7 +28,6 @@ public class ProductResponse {
         ProductResponse that = (ProductResponse) o;
 
         if (!id.equals(that.id)) return false;
-        if (quantity != that.quantity) return false;
         if (Double.compare(that.price, price) != 0) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (description != null ? !description.equals(that.description) : that.description != null) return false;
@@ -42,7 +40,6 @@ public class ProductResponse {
         long temp;
         result = (int) (id ^ (id >>> 32));
         result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + quantity;
         temp = Double.doubleToLongBits(price);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         result = 31 * result + (description != null ? description.hashCode() : 0);

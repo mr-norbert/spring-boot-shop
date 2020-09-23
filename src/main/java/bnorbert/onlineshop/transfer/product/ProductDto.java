@@ -15,8 +15,6 @@ public class ProductDto {
     @NotEmpty
     private String name;
     @NotNull
-    private int quantity;
-    @NotNull
     private double price;
     private String description;
     private String imagePath;

@@ -21,7 +21,6 @@ public abstract class CartMapper {
     @Mapping(target = "qty", source = "cartItem.qty")
     @Mapping(target = "subTotal", source = "cartItem.subTotal")
     @Mapping(target = "productId", source = "product.id")
-    @Mapping(target = "quantity", source = "product.quantity")
     @Mapping(target = "name", source = "product.name")
     @Mapping(target = "price", source = "product.price")
     @Mapping(target = "description", source = "product.description")

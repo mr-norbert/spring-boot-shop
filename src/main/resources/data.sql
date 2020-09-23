@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS `product` (
                                          `image_path` varchar(255) DEFAULT NULL,
                                          `name` varchar(255) DEFAULT NULL,
                                          `price` double NOT NULL,
-                                         `quantity` int(11) NOT NULL,
                                          `unit_in_stock` int(11) NOT NULL,
                                          `category_id` bigint(20) DEFAULT NULL,
                                          `created_by` varchar(255) DEFAULT NULL,
@@ -21,23 +20,25 @@ CREATE TABLE IF NOT EXISTS `product` (
 ) ENGINE=InnoDB;
 
 /*
-INSERT INTO `product` (`id`, `created_date`, `description`, `image_path`, `name`, `price`, `quantity`, `unit_in_stock`, `category_id`, `created_by`, `last_modified_by`, `last_modified_date`) VALUES
-(1, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 1, 10000, 1, NULL, NULL, NULL),
-(2, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 1, 15, 1, NULL, NULL, NULL),
-(3, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 75, 1, 96, 1, NULL, NULL, NULL),
-(4, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 1, 10000, 1, NULL, NULL, NULL),
-(5, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 1, 20, 1, NULL, NULL, NULL),
-(6, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 10, 1, 20, 1, NULL, NULL, NULL),
-(7, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 1, 10000, 1, NULL, NULL, NULL),
-(8, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 1, 20, 1, NULL, NULL, NULL),
-(9, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 50, 100, 90, 1, NULL, NULL, NULL),
-(10, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 1, 10000, 1, NULL, NULL, NULL),
-(11, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 1, 20, 1, NULL, NULL, NULL),
-(12, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 220, 1, 50, 1, NULL, NULL, NULL),
-(13, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 1, 10000, 1, NULL, NULL, NULL),
-(14, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 1, 20, 1, NULL, NULL, NULL),
-(15, '2020-09-01 10:41:32.811000', 'string', 'string', 'string', 10000000, 0, 5, 1, NULL, NULL, NULL),
-(16, '2020-09-12 09:59:39.675000', 'string', 'string', 'string', 299, 0, 0, 1, NULL, NULL, NULL);
+INSERT INTO `product` (`id`, `created_date`, `description`, `image_path`, `name`, `price`, `unit_in_stock`, `category_id`, `created_by`, `last_modified_by`, `last_modified_date`) VALUES
+(1, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 10000, 1, NULL, NULL, NULL),
+(2, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  15, 1, NULL, NULL, NULL),
+(3, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 75,  96, 1, NULL, NULL, NULL),
+(4, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
+(5, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
+(6, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 10,  20, 1, NULL, NULL, NULL),
+(7, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 10000, 1, NULL, NULL, NULL),
+(8, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 20, 1, NULL, NULL, NULL),
+(9, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 50, 90, 1, NULL, NULL, NULL),
+(10, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
+(11, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
+(12, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 220,  50, 1, NULL, NULL, NULL),
+(13, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
+(14, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
+(15, '2020-09-01 10:41:32.811000', 'string', 'string', 'string', 10000000, 5, 1, NULL, NULL, NULL),
+(16, '2020-09-12 09:59:39.675000', 'string', 'string', 'string', 299,  0, 1, NULL, NULL, NULL);
+
+
 
  */
 

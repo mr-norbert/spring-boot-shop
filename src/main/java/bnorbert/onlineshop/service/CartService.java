@@ -87,6 +87,10 @@ public class CartService {
             cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
             cartItemRepository.save(cartItem);
             cart.setGrandTotal(cart.getSum());
+            if(cart.getGrandTotal() < 1){
+                cart.setGrandTotal(cartItem.getSubTotal());
+                cartRepository.save(cart);
+            }
         }
         cartRepository.save(cart);
 
@@ -119,8 +123,6 @@ public class CartService {
         Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "There is no cart for user " + userService.getCurrentUser().getId()));
-
-        cartRepository.save(cart);
 
         return cartMapper.mapToDto(cart);
     }

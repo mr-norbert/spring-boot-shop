@@ -15,7 +15,6 @@ public class UpdateResponse {
     private Instant lastModifiedDate;
     private Long id;
     private String name;
-    private int quantity;
     private double price;
     private String description;
     private String imagePath;
