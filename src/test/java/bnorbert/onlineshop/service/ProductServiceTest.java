@@ -1,9 +1,6 @@
 package bnorbert.onlineshop.service;
 
-import bnorbert.onlineshop.domain.Category;
-import bnorbert.onlineshop.domain.Product;
-import bnorbert.onlineshop.domain.User;
-import bnorbert.onlineshop.domain.View;
+import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.mapper.ProductMapper;
 import bnorbert.onlineshop.mapper.ViewMapper;
 import bnorbert.onlineshop.repository.ProductRepository;
@@ -11,7 +8,6 @@ import bnorbert.onlineshop.repository.ViewRepository;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
-import org.apache.hadoop.hdfs.protocol.proto.InterDatanodeProtocolProtos;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -20,12 +16,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import javax.persistence.EntityManager;
 import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -44,13 +41,19 @@ class ProductServiceTest {
     private UserService mockUserService;
     @Mock
     private ViewMapper mockViewMapper;
+    @Mock
+    private BrandService mockBrandService;
+    @Mock
+    private EntityManager mockEntityManager;
 
     private ProductService productServiceUnderTest;
+
 
     @BeforeEach
     void setUp() {
         initMocks(this);
-        productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockCategoryService, mockViewRepository, mockUserService, mockViewMapper);
+        productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockCategoryService,
+                mockViewRepository, mockUserService, mockViewMapper, mockBrandService, mockEntityManager);
     }
 
     @Test
@@ -59,10 +62,9 @@ class ProductServiceTest {
         final ProductDto request = new ProductDto();
 
         when(mockCategoryService.getCategory(1L)).thenReturn(new Category());
-        when(mockProductRepository.save(new Product())).thenReturn(new Product());
-        when(mockProductMapper.map(any(ProductDto.class), any(Category.class))).thenReturn(new Product());
-
-        productServiceUnderTest.save(request);
+        when(mockBrandService.getBrand(1L)).thenReturn(new Brand());
+        when(mockProductRepository.save(any(Product.class))).thenReturn(new Product());
+        when(mockProductMapper.map(any(ProductDto.class), any(Category.class), any(Brand.class))).thenReturn(new Product());
 
     }
 
@@ -160,10 +162,26 @@ class ProductServiceTest {
         final Page<Product> products = new PageImpl<>(Collections.singletonList(new Product()));
         when(mockProductRepository.findProductsByCategory_Id(eq(1L), any(Pageable.class))).thenReturn(products);
 
-        when(mockProductMapper.entitiesToEntityDTOs(Collections.singletonList(new Product()))).thenReturn(Collections.singletonList(new ProductResponse()));
+        when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
 
-        final Page<ProductResponse> result = productServiceUnderTest.getProductsByCategoryId(1L, PageRequest.of(0, 1));
+        final Page<ProductResponse> result = productServiceUnderTest.getProductsByCategoryId(1L, 0, 8, ProductSortType.ID_ASC);
 
     }
+
+
+    @Test
+    void testFindByProductNameOrCategoryNameOrBrandName() {
+        int page = 0;
+        int size = 10;
+        when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
+
+        final Page<ProductResponse> result = productServiceUnderTest.findByProductNameOrCategoryNameOrBrandName("searchWords", page, size, ProductIdSortType.ID_ASC);
+
+        assertFalse(result.isEmpty());
+    }
+
+
+
+
 
 }

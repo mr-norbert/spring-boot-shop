@@ -22,5 +22,6 @@ public class ProductDto {
     @NotNull
     private int unitInStock;
     private Long categoryId;
-
+    private Long brandId;
+    private Boolean isAvailable;
 }

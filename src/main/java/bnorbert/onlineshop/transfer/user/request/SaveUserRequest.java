@@ -1,9 +1,12 @@
 package bnorbert.onlineshop.transfer.user.request;
 
+import bnorbert.onlineshop.transfer.user.validator.PasswordMatches;
+
 import javax.persistence.Transient;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
+@PasswordMatches
 public class SaveUserRequest {
 
     @Pattern(regexp = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@" + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$")

@@ -1,46 +1,84 @@
 SET sql_mode = '';
-/*
-spring.datasource.initialization-mode=always
- */
+
+#spring.datasource.initialization-mode=always
+
+CREATE TABLE IF NOT EXISTS `brand` (
+                                       `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                                       `name` varchar(255) DEFAULT NULL,
+                                       PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `brand` (`id`, `name`) VALUES
+(1, 'brand'),
+(2, 'brand2');
+
+
+CREATE TABLE IF NOT EXISTS `category` (
+                                          `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                                          `name` varchar(255) DEFAULT NULL,
+                                          PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `category` (`id`, `name`) VALUES
+(1, 'Home Appliances'),
+(2, 'Fashion'),
+(3, 'TV'),
+(4, 'Home Garden & DIY'),
+(5, 'Personal Care');
+
+
+
 
 CREATE TABLE IF NOT EXISTS `product` (
-                                         `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                                         `created_date` datetime(6) DEFAULT NULL,
-                                         `description` varchar(255) DEFAULT NULL,
-                                         `image_path` varchar(255) DEFAULT NULL,
-                                         `name` varchar(255) DEFAULT NULL,
-                                         `price` double NOT NULL,
-                                         `unit_in_stock` int(11) NOT NULL,
-                                         `category_id` bigint(20) DEFAULT NULL,
-                                         `created_by` varchar(255) DEFAULT NULL,
-                                         `last_modified_by` varchar(255) DEFAULT NULL,
-                                         `last_modified_date` datetime(6) DEFAULT NULL,
-                                         PRIMARY KEY (`id`)
+
+                                        `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                                        `created_by` varchar(255) DEFAULT NULL,
+                                        `created_date` datetime(6) DEFAULT NULL,
+                                        `description` varchar(255) DEFAULT NULL,
+                                        `image_path` varchar(255) DEFAULT NULL,
+                                        `last_modified_by` varchar(255) DEFAULT NULL,
+                                        `last_modified_date` datetime(6) DEFAULT NULL,
+                                        `name` varchar(255) DEFAULT NULL,
+                                        `price` double NOT NULL,
+                                        `unit_in_stock` int(11) NOT NULL,
+                                        `category_id` bigint(20) DEFAULT NULL,
+                                        `brand_id` bigint(20) DEFAULT NULL,
+                                        `is_available` bit(1) DEFAULT NULL,
+                                        PRIMARY KEY (`id`)
 
 ) ENGINE=InnoDB;
 
-/*
-INSERT INTO `product` (`id`, `created_date`, `description`, `image_path`, `name`, `price`, `unit_in_stock`, `category_id`, `created_by`, `last_modified_by`, `last_modified_date`) VALUES
-(1, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 10000, 1, NULL, NULL, NULL),
-(2, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  15, 1, NULL, NULL, NULL),
-(3, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 75,  96, 1, NULL, NULL, NULL),
-(4, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
-(5, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
-(6, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 10,  20, 1, NULL, NULL, NULL),
-(7, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200, 10000, 1, NULL, NULL, NULL),
-(8, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100, 20, 1, NULL, NULL, NULL),
-(9, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 50, 90, 1, NULL, NULL, NULL),
-(10, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
-(11, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
-(12, '2020-08-14 09:54:02.852000', 'string', 'string', 'string', 220,  50, 1, NULL, NULL, NULL),
-(13, '2020-08-17 08:22:45.342000', 'string', 'string', 'string', 200,  10000, 1, NULL, NULL, NULL),
-(14, '2020-08-14 09:06:10.959000', 'string', 'string', 'string', 100,  20, 1, NULL, NULL, NULL),
-(15, '2020-09-01 10:41:32.811000', 'string', 'string', 'string', 10000000, 5, 1, NULL, NULL, NULL),
-(16, '2020-09-12 09:59:39.675000', 'string', 'string', 'string', 299,  0, 1, NULL, NULL, NULL);
 
-
-
- */
+INSERT INTO `product` (`id`, `created_by`, `created_date`, `description`, `image_path`, `last_modified_by`, `last_modified_date`, `name`, `price`, `unit_in_stock`, `category_id`, `brand_id`,`is_available`) VALUES
+(1, 'string@gmail.com', '2020-10-04 10:29:09.002000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:29:09.040000', 'string', 100, 100, 1, 1, 1),
+(2, 'string@gmail.com', '2020-10-04 10:42:10.915000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:42:10.953000', 'string', 300, 5, 1, 1, 1),
+(3, 'string@gmail.com', '2020-10-04 10:42:23.109000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:42:23.110000', 'String string', 200, 5, 1, 1, 1),
+(4, 'string@gmail.com', '2020-10-04 10:44:31.608000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:44:31.645000', 'string', 360, 5, 1, 1, 1),
+(5, 'string@gmail.com', '2020-10-04 10:45:16.872000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:45:16.907000', 'String string strung', 360, 5, 1, 1, 1),
+(6, 'string@gmail.com', '2020-10-04 10:47:13.157000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:47:13.199000', 'string', 1000, 5, 1, 1, 1),
+(7, 'string@gmail.com', '2020-10-04 10:47:20.371000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:47:20.371000', 'string', 100, 5, 1, 1, 1),
+(8, 'string@gmail.com', '2020-10-04 10:49:10.431000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:49:10.466000', 'string', 100, 5, 1, 1, 1),
+(9, 'string@gmail.com', '2020-10-04 10:49:31.544000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:49:31.545000', 'string', 100, 5, 1, 1, 1),
+(10, 'string@gmail.com', '2020-10-04 10:49:48.408000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:49:48.408000', 'String', 100, 5, 1, 1, 1),
+(11, 'string@gmail.com', '2020-10-04 10:53:28.091000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:53:28.127000', 'String', 100, 5, 1, 1, 1),
+(12, 'string@gmail.com', '2020-10-04 10:54:39.837000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:54:39.837000', 'String dsadasd', 25, 5, 1, 1, 1),
+(13, 'string@gmail.com', '2020-10-04 10:54:57.069000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:54:57.069000', 'String dsadasd', 100, 5, 1, 1, 1),
+(14, 'string@gmail.com', '2020-10-04 10:55:23.609000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:55:23.609000', 'String', 100, 5, 1, 1, 1),
+(15, 'string@gmail.com', '2020-10-04 10:57:30.734000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:57:30.770000', 'String', 100, 5, 1, 1, 1),
+(16, 'string@gmail.com', '2020-10-04 10:58:40.476000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:58:40.476000', 'String', 100, 5, 1, 1, 1),
+(17, 'string@gmail.com', '2020-10-04 10:59:53.448000', 'string', 'string', 'string@gmail.com', '2020-10-04 10:59:53.448000', 'String string', 100, 5, 1, 1, 1),
+(18, 'string@gmail.com', '2020-10-04 11:00:08.759000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:00:08.760000', 'String string dsadasdas', 100, 5, 1, 1, 1),
+(19, 'string@gmail.com', '2020-10-04 11:31:52.143000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:31:52.178000', 'not string', 20, 0, 1, 1, 1),
+(20, 'string@gmail.com', '2020-10-04 11:45:18.412000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:45:18.449000', 'string', 200, 20, 1, 1, 1),
+(21, 'string@gmail.com', '2020-10-04 11:45:36.996000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:45:36.997000', 'String', 200, 20, 1, 1, 1),
+(22, 'string@gmail.com', '2020-10-04 11:48:34.778000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:48:34.778000', 'product', 200, 20, 2, 2, 1),
+(23, 'string@gmail.com', '2020-10-04 11:48:46.693000', 'string', 'string', 'string@gmail.com', '2020-10-04 11:48:46.693000', 'product 2', 200, 20, 2, 2, 1),
+(24, 'string@gmail.com', '2020-10-04 12:24:27.086000', 'string', 'string', 'string@gmail.com', '2020-10-04 12:24:27.129000', 'string', 10, 3, 1, 1, 1),
+(25, 'string@gmail.com', '2020-10-04 12:24:44.898000', 'string', 'string', 'string@gmail.com', '2020-10-04 12:24:44.899000', 'string', 10, 9, 1, 1, 1),
+(26, 'string@gmail.com', '2020-10-05 07:13:03.523000', 'string', 'string', 'string@gmail.com', '2020-10-05 07:13:03.574000', 'string', 20, 20, 1, 1, 1),
+(27, 'string@gmail.com', '2020-10-05 07:13:27.761000', 'string', 'string', 'string@gmail.com', '2020-10-05 07:13:27.761000', 'string ', 30, 30, 1, 1, 1),
+(28, 'string@gmail.com', '2020-10-05 07:13:34.997000', 'string', 'string', 'string@gmail.com', '2020-10-05 07:13:34.998000', 'String String', 90, 1000, 1, 1, 1),
+(29, 'string@gmail.com', '2020-10-05 07:41:51.973000', 'string', 'string', 'string@gmail.com', '2020-10-05 07:41:52.010000', 'string', 20, 20, 1, 1, 1);
 
 
 
@@ -57,10 +95,8 @@ CREATE TABLE IF NOT EXISTS `review` (
 ) ENGINE=InnoDB;
 
 
-/*
- CreateUser x7
- */
 
+#create user x6
 /*
 INSERT INTO `review` (`id`, `content`, `created_date`, `intent`, `rating`, `product_id`, `user_id`) VALUES
 
@@ -125,11 +161,8 @@ CREATE TABLE IF NOT EXISTS `window_shopping` (
                                                  PRIMARY KEY (`item_id`,`product_id`)
 
 ) ENGINE=InnoDB;
-/*
- TanimotoCoefficientSimilarity
- */
 
-
+#TanimotoCoefficientSimilarity
 /*
 INSERT INTO `window_shopping` (`item_id`, `product_id`) VALUES
 

@@ -6,14 +6,16 @@ import org.hibernate.search.annotations.Field;
 
 import javax.persistence.*;
 
-@Entity
 @Getter
 @Setter
-public class Category {
+@Entity
+
+public class Brand {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Field
     private String name;
+
 }

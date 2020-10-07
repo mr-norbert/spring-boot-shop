@@ -1,9 +1,12 @@
 package bnorbert.onlineshop.controller;
 
+import bnorbert.onlineshop.domain.ProductIdSortType;
+import bnorbert.onlineshop.domain.ProductSortType;
 import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
+import bnorbert.onlineshop.transfer.search.SearchDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -91,9 +94,24 @@ class ProductControllerTest {
     void testGetProductsByCategory() {
 
         final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
-        when(mockProductService.getProductsByCategoryId(eq(1L), any(Pageable.class))).thenReturn(productResponses);
+        when(mockProductService.getProductsByCategoryId(1L, 0, 8, ProductSortType.ID_ASC)).thenReturn(productResponses);
 
-        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProductsByCategory(1L, PageRequest.of(0, 1));
 
+        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProductsByCategory(1L, 0, 8, ProductSortType.ID_ASC);
     }
+
+
+    @Test
+    void testSearchProducts() {
+        final SearchDto request = new SearchDto();
+
+        final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
+        when(mockProductService.findByProductNameOrCategoryNameOrBrandName("searchWords", 0, 8, ProductIdSortType.ID_ASC)).thenReturn(productResponses);
+
+        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.searchProducts(request, 0, 8, ProductIdSortType.ID_ASC);
+    }
+
+
+
+
 }

@@ -5,7 +5,6 @@ import lombok.ToString;
 
 import javax.validation.constraints.NotNull;
 
-@ToString
 public class AddProductToCartRequest {
 
     @NotNull
@@ -23,12 +22,20 @@ public class AddProductToCartRequest {
     }
 
     public Integer getProductQuantity() {
-        if (productQuantity <= 0) {
+        if (productQuantity < 1) {
             throw new ResourceNotFoundException("One is minimum-minimorum");
         }else return productQuantity;
     }
 
     public void setProductQuantity(Integer productQuantity) {
         this.productQuantity = productQuantity;
+    }
+
+    @Override
+    public String toString() {
+        return "AddProductToCartRequest{" +
+                "productId=" + productId +
+                ", productQuantity=" + productQuantity +
+                '}';
     }
 }

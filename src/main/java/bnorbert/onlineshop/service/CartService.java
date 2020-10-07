@@ -63,7 +63,6 @@ public class CartService {
             log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
             User user = userService.getUser(userService.getCurrentUser().getId());
             cart.setUser(user);
-            cartRepository.save(cart);
         }
 
         Product product = productService.getProduct(request.getProductId());
@@ -89,7 +88,6 @@ public class CartService {
             cart.setGrandTotal(cart.getSum());
             if(cart.getGrandTotal() < 1){
                 cart.setGrandTotal(cartItem.getSubTotal());
-                cartRepository.save(cart);
             }
         }
         cartRepository.save(cart);
@@ -99,22 +97,16 @@ public class CartService {
 
     }
 
-
-    public void saveCartItem(CartItem cartItem) {
-        cartItemRepository.save(cartItem);
-    }
-
     public void clearCart(Cart cart) {
         List<CartItem> cartItemList = cartItemRepository.findByCart(cart);
 
         for (CartItem cartItem : cartItemList) {
             cartItem.setCart(null);
-            saveCartItem(cartItem);
+            cartItemRepository.save(cartItem);
         }
         cart.setGrandTotal(0d);
         cartRepository.save(cart);
     }
-
 
 
     @Transactional

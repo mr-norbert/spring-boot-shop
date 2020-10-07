@@ -72,6 +72,9 @@ public class OrderService {
             if(product.getUnitInStock() < 0){
                 throw new ResourceNotFoundException("Not so much quantity in stock");
             }
+            else if(product.getUnitInStock() < 1){
+                product.setIsAvailable(false);
+            }
             productRepository.save(product);
             cartItemRepository.save(cartItem);
             orderRepository.save(order);

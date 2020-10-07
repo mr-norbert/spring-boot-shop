@@ -1,14 +1,15 @@
 package bnorbert.onlineshop.mapper;
 
+import bnorbert.onlineshop.domain.Brand;
 import bnorbert.onlineshop.domain.Category;
 import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public abstract class ProductMapper {
@@ -19,9 +20,11 @@ public abstract class ProductMapper {
     @Mapping(target = "description", source = "productDto.description")
     @Mapping(target = "imagePath", source = "productDto.imagePath")
     @Mapping(target = "unitInStock", source = "productDto.unitInStock")
+    @Mapping(target = "isAvailable", source = "productDto.isAvailable")
     @Mapping(target = "createdDate", expression = "java(java.time.Instant.now())")
     @Mapping(target = "category", source = "category")
-    public abstract Product map(ProductDto productDto, Category category);
+    @Mapping(target = "brand", source = "brand")
+    public abstract Product map(ProductDto productDto, Category category, Brand brand);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "product.name")
@@ -30,6 +33,7 @@ public abstract class ProductMapper {
     @Mapping(target = "imagePath", source = "product.imagePath")
     @Mapping(target = "unitInStock", source = "product.unitInStock")
     @Mapping(target = "createdDate", source = "product.createdDate")
+    @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "categoryId", source = "category.id")
     public abstract ProductResponse mapToDto(Product product);
 

@@ -103,35 +103,6 @@ class CartServiceTest {
     }
 
     @Test
-    void testSaveCartItem() {
-
-        final CartItem cartItem = new CartItem();
-        cartItem.setId(1L);
-        cartItem.setQty(5);
-        cartItem.setSubTotal(5.0);
-        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
-        cartItem.setCreatedBy("createdBy");
-        final Product product = new Product();
-        product.setId(1L);
-        product.setName("name");
-        product.setPrice(5.0);
-        product.setDescription("description");
-        product.setImagePath("imagePath");
-        product.setUnitInStock(20);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
-        product.setCreatedBy("createdBy");
-        product.setLastModifiedBy("lastModifiedBy");
-        cartItem.setProduct(product);
-        cartItem.setCart(new Cart());
-        cartItem.setOrder(new Order());
-
-        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
-
-        cartServiceUnderTest.saveCartItem(cartItem);
-
-    }
-
-    @Test
     void testClearCart() {
 
         final Cart cart = new Cart();

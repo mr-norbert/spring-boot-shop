@@ -18,6 +18,7 @@ public class ProductResponse {
     private int unitInStock;
     private Instant createdDate;
     private Long categoryId;
+    private String categoryName;
 
 
     @Override

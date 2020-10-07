@@ -23,7 +23,7 @@ public class UpdateQuantityRequest {
     }
 
     public int getQty() {
-        if (qty <= 0) {
+        if (qty < 1) {
             throw new ResourceNotFoundException("One is minimum-minimorum");
         }else return qty;
     }

@@ -1,11 +1,14 @@
 package bnorbert.onlineshop.transfer.user.request;
 
+import bnorbert.onlineshop.transfer.user.validator.PasswordMatchesForReset;
+
 import javax.persistence.Transient;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
+@PasswordMatchesForReset
 public class ResetPasswordRequest {
 
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[-~`!@#$%^&*_+=)(}{|;':<>,.?/])(?=\\S+$).{8,}$", message =
