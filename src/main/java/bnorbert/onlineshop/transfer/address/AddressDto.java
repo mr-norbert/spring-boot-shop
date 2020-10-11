@@ -23,8 +23,6 @@ public class AddressDto {
     private String phoneNumber;
     private String address;
     private String address2;
-
-    @Pattern(regexp = "^[_A-z]*((-|\\s)*[_A-z])*$", message = "No whitespace at the end, no digits, no special chars")
     private String state;
 
     @Pattern(regexp = "^[_A-z]*((-|\\s)*[_A-z])*$", message = "No whitespace at the end, no digits, no special chars")

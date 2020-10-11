@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.hibernate.search.annotations.Field;
 
 import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -16,4 +18,7 @@ public class Category {
     private Long id;
     @Field
     private String name;
+
+    @OneToMany(mappedBy="category", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Product> products = new HashSet<>();
 }

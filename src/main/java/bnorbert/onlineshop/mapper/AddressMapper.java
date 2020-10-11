@@ -22,7 +22,6 @@ public abstract class AddressMapper {
     @Mapping(target = "user", source = "user")
     public abstract ShippingAddress map(AddressDto request, User user);
 
-
     @Mapping(target = "firstName", source = "shippingAddress.firstName")
     @Mapping(target = "lastName", source = "shippingAddress.lastName")
     @Mapping(target = "phoneNumber", source = "shippingAddress.phoneNumber")

@@ -1,13 +1,14 @@
 package bnorbert.onlineshop.transfer.product;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.Instant;
 
+@Builder
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @ToString
 public class ProductResponse {
     private Long id;

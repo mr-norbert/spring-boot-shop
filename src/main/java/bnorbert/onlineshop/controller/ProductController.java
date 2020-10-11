@@ -8,7 +8,6 @@ import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import bnorbert.onlineshop.transfer.search.SearchDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,19 +55,13 @@ public class ProductController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/getProductsByNameOrCategory")
-     public ResponseEntity<Page<ProductResponse>> getProducts(
-             String partialName, Long category_id, Pageable pageable) {
-         Page<ProductResponse> products = productService.getProductsByNameOrCategory(partialName, category_id, pageable);
-         return new ResponseEntity<>(products, HttpStatus.OK);
-     }
-
     @GetMapping("/getProductsByCategory")
-    public ResponseEntity<Page<ProductResponse>> getProductsByCategory(Long category_id,
+    public ResponseEntity<Page<ProductResponse>> getProducts(Long category_id, Long brand_id,
                                                                        @RequestParam(name = "page") @Min(0) int page,
                                                                        @RequestParam(name = "size") @Min(1) int size,
-                                                                       @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType) {
-        Page<ProductResponse> products = productService.getProductsByCategoryId(category_id, page, size, sortType);
+                                                                       @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType,
+                                                                       Double priceFrom, Double priceMax) {
+        Page<ProductResponse> products = productService.getProducts(category_id, brand_id, page, size, sortType, priceFrom, priceMax);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
@@ -77,7 +70,27 @@ public class ProductController {
                                                                 @RequestParam(name = "page") @Min(0) int page,
                                                                 @RequestParam(name = "size") @Min(1) int size,
                                                                 @RequestParam(name = "sort") ProductIdSortType sortType) {
-        Page<ProductResponse> products = productService.findByProductNameOrCategoryNameOrBrandName(request.getSearchWords(), page, size, sortType);
+        Page<ProductResponse> products = productService.findByProductPartialNameOrCategoryNameOrBrandName(request.getSearchWords(), page, size, sortType);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
+    @PostMapping("/createProductLombok")
+    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductDto request) {
+        return new ResponseEntity<>(productService.createProductLombok(request), HttpStatus.CREATED);
+    }
+
+
+    @GetMapping("/productLombok/{id}")
+    public ResponseEntity<ProductResponse> getProductLombok(@PathVariable Long id) {
+        return new ResponseEntity<>(productService.getProductIdLombok(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/getProductsLombok")
+    public ResponseEntity<Page<ProductResponse>> getProductsLombok(Long category_id,
+                                                                       @RequestParam(name = "page") @Min(0) int page,
+                                                                       @RequestParam(name = "size") @Min(1) int size,
+                                                                       @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType) {
+        Page<ProductResponse> products = productService.getProductsLombok(category_id, page, size, sortType);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 

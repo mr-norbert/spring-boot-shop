@@ -24,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityManager;
-import java.util.List;
+import javax.validation.constraints.NotNull;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -112,29 +113,38 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
+
     @Transactional
-    public Page<ProductResponse> getProductsByNameOrCategory(String partialName, Long category_id, Pageable pageable){
-        log.info("Retrieving products: by partialName{}, by category: {}");
-        Page<Product> products;
-        if(partialName != null) {
-            products = productRepository.findByNameContaining(partialName, pageable);
-        }else products = productRepository.findProductsByCategory_Id(category_id, pageable);
-        List<ProductResponse> productResponses = productMapper.entitiesToEntityDTOs(products.getContent());
-        return new PageImpl<>(productResponses, pageable, products.getTotalElements());
+    public Page<ProductResponse> getProducts(@NotNull Long category_id, Long brand_id, Integer page, Integer size,
+                                             ProductSortType sortType, Double priceFrom, Double priceMax){
+        log.info("Retrieving products: page: {}, size: {}, by category: {}, by brand: {}, by sortType: {}, by priceFrom:{}, by priceMax: {}",
+                page, size, category_id, brand_id, sortType, priceFrom, priceMax);
+
+        if(category_id != null && priceFrom != null && priceMax != null && brand_id != null) {
+            Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
+            Pageable pageable = PageRequest.of(page, size, sort);
+            return productRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(category_id, brand_id, priceFrom, priceMax, pageable).map(productMapper::mapToDto);
+
+        }else if(category_id != null && priceFrom != null && priceMax != null) {
+            Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
+            Pageable pageable = PageRequest.of(page, size, sort);
+            return productRepository.findProductsByCategory_IdAndPriceBetween(category_id, priceFrom, priceMax, pageable).map(productMapper::mapToDto);
+
+        }else if(category_id != null && brand_id != null){
+            Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
+            Pageable pageable = PageRequest.of(page, size, sort);
+            return productRepository.findProductsByCategory_IdAndBrand_Id(category_id, brand_id, pageable).map(productMapper::mapToDto);
+
+        }else {
+            Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
+            Pageable pageable = PageRequest.of(page, size, sort);
+            return productRepository.findProductsByCategory_Id(category_id, pageable).map(productMapper::mapToDto);
+        }
     }
 
 
     @Transactional
-    public Page<ProductResponse> getProductsByCategoryId(Long category_id, Integer page, Integer size, ProductSortType sortType){
-        log.info("Retrieving products: page: {}, size: {}, by category: {}, by sortType: {}", page, size, category_id, sortType);
-        Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findProductsByCategory_Id(category_id, pageable).map(productMapper::mapToDto);
-    }
-
-
-    @Transactional
-    public Page<ProductResponse> findByProductNameOrCategoryNameOrBrandName(String searchWords, int page, int size, ProductIdSortType sortType) {
+    public Page<ProductResponse> findByProductPartialNameOrCategoryNameOrBrandName(String searchWords, int page, int size, ProductIdSortType sortType) {
         log.info("Retrieving products: page: {}, by size: {}, by searchWords: {}", page, size, searchWords);
         return search(searchWords, page, size, sortType).map(productMapper::mapToDto);
     }
@@ -199,5 +209,52 @@ public class ProductService {
         return searchWords;
     }
 
+
+    //lombok.builder
+    private Product map(ProductDto request) {
+        Category category = categoryService.getCategory(request.getCategoryId());
+        Brand brand = brandService.getBrand(request.getBrandId());
+        return Product.builder()
+                .name(request.getName())
+                .price(request.getPrice())
+                .unitInStock(request.getUnitInStock())
+                .brand(brand)
+                .category(category)
+                .createdDate(Instant.now())
+                .build();
+    }
+
+    private ProductResponse mapToDto(Product product) {
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .categoryId(product.getCategory().getId())
+                .build();
+    }
+
+
+    public ProductResponse createProductLombok(ProductDto request) {
+        log.info("Creating product: {}",request);
+        return mapToDto(productRepository.save(map(request)));
+    }
+
+
+    public ProductResponse getProductIdLombok(Long id) {
+        log.info("Retrieving product {}", id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product" + id + "not found"));
+        return mapToDto(product);
+    }
+
+    public Page<ProductResponse> getProductsLombok(@NotNull Long category_id, Integer page, Integer size, ProductSortType sortType){
+        log.info("Retrieving products: page: {}, size: {}, by category: {}, by sortType: {}",
+                page, size, category_id, sortType);
+
+        Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return productRepository.findProductsByCategory_Id(category_id, pageable).map(this::mapToDto);
+
+    }
 
 }

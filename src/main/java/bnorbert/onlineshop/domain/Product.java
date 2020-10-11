@@ -1,7 +1,6 @@
 package bnorbert.onlineshop.domain;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.ngram.EdgeNGramFilterFactory;
@@ -23,6 +22,9 @@ import java.util.Set;
 @Getter
 @Setter
 @Indexed
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 
 @AnalyzerDef(name = "textanalyzer",
         tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),

@@ -31,7 +31,7 @@ public class ShippingAddressService {
 
     @Transactional
     public void save(AddressDto request) {
-        log.info("Creating shipping address: {}",request);
+        log.info("Creating shipping address: {}", request);
         shippingAddressRepository.save(addressMapper.map(request, userService.getCurrentUser()));
     }
 

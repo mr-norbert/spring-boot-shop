@@ -12,8 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -52,7 +50,7 @@ class ProductControllerTest {
     @Test
     void testGetProduct() {
 
-        final ResponseEntity<ProductResponse> expectedResult = new ResponseEntity<>(new ProductResponse(), HttpStatus.OK);
+        final ResponseEntity<ProductResponse> expectedResult = new ResponseEntity<>(new ProductResponse(), HttpStatus.CONTINUE);
         when(mockProductService.getProductId(1L)).thenReturn(new ProductResponse());
 
         final ResponseEntity<ProductResponse> result = productControllerUnderTest.getProduct(1L);
@@ -65,16 +63,14 @@ class ProductControllerTest {
 
         final ProductDto request = new ProductDto();
 
-        final ResponseEntity<UpdateResponse> expectedResult = new ResponseEntity<>(new UpdateResponse(), HttpStatus.OK);
         when(mockProductService.updateProduct(eq(1L), any(ProductDto.class))).thenReturn(new UpdateResponse());
 
         final ResponseEntity<UpdateResponse> result = productControllerUnderTest.updateProduct(1L, request);
-
-        assertThat(result).isEqualTo(expectedResult);
     }
 
     @Test
     void testDeleteProduct() {
+
         final ResponseEntity result = productControllerUnderTest.deleteProduct(1L);
 
         verify(mockProductService).deleteProduct(1L);
@@ -84,34 +80,52 @@ class ProductControllerTest {
     void testGetProducts() {
 
         final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
-        when(mockProductService.getProductsByNameOrCategory(eq("partialName"), eq(1L), any(Pageable.class))).thenReturn(productResponses);
+        when(mockProductService.getProducts(1L, 1L, 0, 20, ProductSortType.ID_ASC, 10.0, 50.0)).thenReturn(productResponses);
 
-        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProducts("partialName", 1L, PageRequest.of(0, 1));
-
+        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProducts(1L, 1L, 0, 20, ProductSortType.ID_ASC, 10.0, 50.0);
     }
-
-    @Test
-    void testGetProductsByCategory() {
-
-        final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
-        when(mockProductService.getProductsByCategoryId(1L, 0, 8, ProductSortType.ID_ASC)).thenReturn(productResponses);
-
-
-        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProductsByCategory(1L, 0, 8, ProductSortType.ID_ASC);
-    }
-
 
     @Test
     void testSearchProducts() {
+
         final SearchDto request = new SearchDto();
 
         final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
-        when(mockProductService.findByProductNameOrCategoryNameOrBrandName("searchWords", 0, 8, ProductIdSortType.ID_ASC)).thenReturn(productResponses);
+        when(mockProductService.findByProductPartialNameOrCategoryNameOrBrandName("searchWords", 0, 20, ProductIdSortType.ID_ASC)).thenReturn(productResponses);
 
-        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.searchProducts(request, 0, 8, ProductIdSortType.ID_ASC);
+        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.searchProducts(request, 0, 20, ProductIdSortType.ID_ASC);
+
     }
 
+    @Test
+    void testCreateProduct() {
 
+        final ProductDto request = new ProductDto();
 
+        final ResponseEntity<ProductResponse> expectedResult = new ResponseEntity<>(new ProductResponse(), HttpStatus.CONTINUE);
+        when(mockProductService.createProductLombok(any(ProductDto.class))).thenReturn(new ProductResponse());
 
+        final ResponseEntity<ProductResponse> result = productControllerUnderTest.createProduct(request);
+
+        assertThat(result).isEqualTo(expectedResult);
+    }
+
+    @Test
+    void testGetProductLombok() {
+        final ResponseEntity<ProductResponse> expectedResult = new ResponseEntity<>(new ProductResponse(), HttpStatus.CONTINUE);
+        when(mockProductService.getProductIdLombok(0L)).thenReturn(new ProductResponse());
+
+        final ResponseEntity<ProductResponse> result = productControllerUnderTest.getProductLombok(1L);
+
+        assertThat(result).isEqualTo(expectedResult);
+    }
+
+    @Test
+    void testGetProductsLombok() {
+
+        final Page<ProductResponse> productResponses = new PageImpl<>(Collections.singletonList(new ProductResponse()));
+        when(mockProductService.getProductsLombok(1L, 0, 20, ProductSortType.ID_ASC)).thenReturn(productResponses);
+
+        final ResponseEntity<Page<ProductResponse>> result = productControllerUnderTest.getProductsLombok(1L, 0, 20, ProductSortType.ID_ASC);
+    }
 }

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import javax.persistence.EntityManager;
@@ -60,6 +59,8 @@ class ProductServiceTest {
     void testSave() {
 
         final ProductDto request = new ProductDto();
+        request.setBrandId(1L);
+        request.setCategoryId(1L);
 
         when(mockCategoryService.getCategory(1L)).thenReturn(new Category());
         when(mockBrandService.getBrand(1L)).thenReturn(new Brand());
@@ -141,33 +142,25 @@ class ProductServiceTest {
     }
 
     @Test
-    void testGetProductsByNameOrCategory() {
+    void testGetProducts() {
 
         final Page<Product> products = new PageImpl<>(Collections.singletonList(new Product()));
-        when(mockProductRepository.findByNameContaining(eq("partialName"), any(Pageable.class))).thenReturn(products);
-
-        final Page<Product> products1 = new PageImpl<>(Collections.singletonList(new Product()));
-        when(mockProductRepository.findProductsByCategory_Id(eq(1L), any(Pageable.class))).thenReturn(products1);
-
-        when(mockProductMapper.entitiesToEntityDTOs(Collections.singletonList(new Product()))).thenReturn(Collections.singletonList(new ProductResponse()));
-
-
-        final Page<ProductResponse> result = productServiceUnderTest.getProductsByNameOrCategory("partialName", 1L, PageRequest.of(0, 1));
-
-    }
-
-    @Test
-    void testGetProductsByCategoryId() {
-
-        final Page<Product> products = new PageImpl<>(Collections.singletonList(new Product()));
-        when(mockProductRepository.findProductsByCategory_Id(eq(1L), any(Pageable.class))).thenReturn(products);
+        when(mockProductRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(eq(1L), eq(1L), eq(10.0), eq(50.0), any(Pageable.class))).thenReturn(products);
 
         when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
 
-        final Page<ProductResponse> result = productServiceUnderTest.getProductsByCategoryId(1L, 0, 8, ProductSortType.ID_ASC);
+        final Page<Product> products1 = new PageImpl<>(Collections.singletonList(new Product()));
+        when(mockProductRepository.findProductsByCategory_IdAndPriceBetween(eq(1L), eq(10.0), eq(50.0), any(Pageable.class))).thenReturn(products1);
+
+        final Page<Product> products2 = new PageImpl<>(Collections.singletonList(new Product()));
+        when(mockProductRepository.findProductsByCategory_IdAndBrand_Id(eq(1L), eq(1L), any(Pageable.class))).thenReturn(products2);
+
+        final Page<Product> products3 = new PageImpl<>(Collections.singletonList(new Product()));
+        when(mockProductRepository.findProductsByCategory_Id(eq(1L), any(Pageable.class))).thenReturn(products3);
+
+        final Page<ProductResponse> result = productServiceUnderTest.getProducts(1L, 1L, 0, 20, ProductSortType.ID_ASC, 10.0, 50.0);
 
     }
-
 
     @Test
     void testFindByProductNameOrCategoryNameOrBrandName() {
@@ -175,13 +168,37 @@ class ProductServiceTest {
         int size = 10;
         when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
 
-        final Page<ProductResponse> result = productServiceUnderTest.findByProductNameOrCategoryNameOrBrandName("searchWords", page, size, ProductIdSortType.ID_ASC);
+        final Page<ProductResponse> result = productServiceUnderTest.findByProductPartialNameOrCategoryNameOrBrandName("searchWords", page, size, ProductIdSortType.ID_ASC);
 
         assertFalse(result.isEmpty());
     }
 
+    @Test
+    void testCreateProductLombok() {
 
+        final ProductDto request = new ProductDto();
+        request.setBrandId(1L);
+        request.setCategoryId(1L);
 
+        final ProductResponse expectedResult = new ProductResponse();
+        when(mockProductRepository.save(any(Product.class))).thenReturn(new Product());
+        when(mockCategoryService.getCategory(1L)).thenReturn(new Category());
+        when(mockBrandService.getBrand(1L)).thenReturn(new Brand());
+
+        final ProductResponse result = productServiceUnderTest.createProductLombok(request);
+
+        assertThat(result).isEqualTo(expectedResult);
+    }
+
+    @Test
+    void testGetProductIdLombok() {
+        final ProductResponse expectedResult = new ProductResponse();
+        when(mockProductRepository.findById(1L)).thenReturn(Optional.of(new Product()));
+
+        final ProductResponse result = productServiceUnderTest.getProductIdLombok(1L);
+
+        assertThat(result).isEqualTo(expectedResult);
+    }
 
 
 }

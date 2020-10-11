@@ -1,16 +1,19 @@
 package bnorbert.onlineshop.transfer.product;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.Instant;
 
+@Builder
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @ToString
+
+
 public class ProductDto {
     @NotEmpty
     private String name;

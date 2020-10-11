@@ -4,10 +4,17 @@ import bnorbert.onlineshop.domain.Category;
 import bnorbert.onlineshop.mapper.CategoryMapper;
 import bnorbert.onlineshop.repository.CategoryRepository;
 import bnorbert.onlineshop.transfer.category.CategoryDto;
+import bnorbert.onlineshop.transfer.category.CategoryResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -52,4 +59,16 @@ class CategoryServiceTest {
 
         final Category result = categoryServiceUnderTest.getCategory(0L);
     }
+
+    @Test
+    void testGetCategories() {
+
+        final Page<Category> categories = new PageImpl<>(Collections.singletonList(new Category()));
+        when(mockCategoryRepository.findAll(any(Pageable.class))).thenReturn(categories);
+
+        when(mockCategoryMapper.entitiesToEntityDTOs(Collections.singletonList(new Category()))).thenReturn(Collections.singletonList(new CategoryResponse()));
+
+        final Page<CategoryResponse> result = categoryServiceUnderTest.getCategories(PageRequest.of(0, 10));
+    }
+
 }
