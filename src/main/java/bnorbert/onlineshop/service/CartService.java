@@ -63,6 +63,7 @@ public class CartService {
             log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
             User user = userService.getUser(userService.getCurrentUser().getId());
             cart.setUser(user);
+            cartRepository.save(cart);
         }
 
         Product product = productService.getProduct(request.getProductId());

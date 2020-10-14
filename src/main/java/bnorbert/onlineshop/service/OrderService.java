@@ -51,6 +51,8 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "There is no cart for user " + userService.getCurrentUser().getId()));
 
+        User user = userService.getCurrentUser();
+
         ShippingAddress address = shippingAddressService.getAddress(request.getAddressId());
 
         Optional<ShippingAddress> addressAndUser = shippingAddressRepository.
@@ -66,6 +68,7 @@ public class OrderService {
 
         for(CartItem cartItem : cartItemList) {
             order.addCartItem(cartItem);
+            user.addCartItem(cartItem);
             Product product = cartItem.getProduct();
 
             product.setUnitInStock(product.getUnitInStock() - cartItem.getQty());

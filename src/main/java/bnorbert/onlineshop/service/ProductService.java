@@ -142,7 +142,7 @@ public class ProductService {
         }
     }
 
-
+    //it must be fed first
     @Transactional
     public Page<ProductResponse> findByProductPartialNameOrCategoryNameOrBrandName(String searchWords, int page, int size, ProductIdSortType sortType) {
         log.info("Retrieving products: page: {}, by size: {}, by searchWords: {}", page, size, searchWords);
