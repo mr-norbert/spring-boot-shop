@@ -9,7 +9,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class ItemMapper {
-
     @Mapping(target = "id", source = "id")
     public abstract AddToCartResponse mapToDto(CopyOfTheProduct copyOfTheProducts);
 

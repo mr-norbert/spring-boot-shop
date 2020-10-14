@@ -88,6 +88,7 @@ public class OnlineShopApplication {
 		MySQLBooleanPrefJDBCDataModel dataModel = new MySQLBooleanPrefJDBCDataModel(dataSource2, "view", "user_id", "product_id","last_modified_date" );
 
 		//discounts for the future
+		//in general, the referral system helps users find things they would not have thought to look for on their own
 		System.out.println("TanimotoCoefficientSimilarity #2 " + LocalDateTime.now());
 		ItemSimilarity itemSim = new TanimotoCoefficientSimilarity(dataModel);
 		GenericItemBasedRecommender genericItemBasedRec = new GenericItemBasedRecommender(dataModel, itemSim);
@@ -112,6 +113,7 @@ public class OnlineShopApplication {
 		MySQLBooleanPrefJDBCDataModel data = new MySQLBooleanPrefJDBCDataModel(dataSource3, "cart_item", "user_id", "product_id","created_date" );
 
 		//Customers who bought this product also bought these products
+		//make sure the user id is not null and have fun
 		System.out.println("TanimotoCoefficientSimilarity #3 " + LocalDateTime.now());
 		ItemSimilarity itemSim2 = new TanimotoCoefficientSimilarity(data);
 		GenericItemBasedRecommender genRecommender = new GenericItemBasedRecommender(data, itemSim2);

@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityManager;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Objects;
@@ -38,6 +39,8 @@ public class ProductService {
     private static final String ASCENDING_TYPE = "asc";
     private static final String IS_AVAILABLE_FIELD = "isAvailable";
     private static final String DELIMETER = "\\s";
+    private static final int PAGE_DEFAULT = 0;
+    private static final int PAGE_SIZE = 20;
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
@@ -115,38 +118,45 @@ public class ProductService {
 
 
     @Transactional
-    public Page<ProductResponse> getProducts(@NotNull Long category_id, Long brand_id, Integer page, Integer size,
-                                             ProductSortType sortType, Double priceFrom, Double priceMax){
-        log.info("Retrieving products: page: {}, size: {}, by category: {}, by brand: {}, by sortType: {}, by priceFrom:{}, by priceMax: {}",
-                page, size, category_id, brand_id, sortType, priceFrom, priceMax);
+    public Page<ProductResponse> getProducts(//@NotNull @NotEmpty Long category_id, Long brand_id,
+                                             @NotNull @NotEmpty CategoryType categoryType, BrandType brandType,
+                                             Optional<Integer> page, Optional<Integer> size, ProductSortType sortType,
+                                             Double priceFrom, Double priceMax){
+        log.info("Retrieving products: page: {}, size: {}, by categoryType: {}, by brandType: {}, by sortType: {}, by priceFrom:{}, by priceMax: {}",
+                page, size, categoryType, brandType, sortType, priceFrom, priceMax);
 
-        if(category_id != null && priceFrom != null && priceMax != null && brand_id != null) {
+        if(categoryType != null && priceFrom != null && priceMax != null && brandType != null) {
             Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
-            Pageable pageable = PageRequest.of(page, size, sort);
-            return productRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(category_id, brand_id, priceFrom, priceMax, pageable).map(productMapper::mapToDto);
+            Pageable pageable = PageRequest.of(page.orElse(PAGE_DEFAULT), size.orElse(PAGE_SIZE), sort);
+            return productRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(categoryType.getId(), brandType.getId(), priceFrom, priceMax, pageable)
+                    .map(productMapper::mapToDto);
 
-        }else if(category_id != null && priceFrom != null && priceMax != null) {
+        }else if(categoryType != null && priceFrom != null && priceMax != null) {
             Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
-            Pageable pageable = PageRequest.of(page, size, sort);
-            return productRepository.findProductsByCategory_IdAndPriceBetween(category_id, priceFrom, priceMax, pageable).map(productMapper::mapToDto);
+            Pageable pageable = PageRequest.of(page.orElse(PAGE_DEFAULT), size.orElse(PAGE_SIZE), sort);
+            return productRepository.findProductsByCategory_IdAndPriceBetween(categoryType.getId(), priceFrom, priceMax, pageable).map(productMapper::mapToDto);
 
-        }else if(category_id != null && brand_id != null){
+        }else if(categoryType != null && brandType != null){
             Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
-            Pageable pageable = PageRequest.of(page, size, sort);
-            return productRepository.findProductsByCategory_IdAndBrand_Id(category_id, brand_id, pageable).map(productMapper::mapToDto);
+            Pageable pageable = PageRequest.of(page.orElse(PAGE_DEFAULT), size.orElse(PAGE_SIZE), sort);
+            return productRepository.findProductsByCategory_IdAndBrand_Id(categoryType.getId(), brandType.getId(), pageable).map(productMapper::mapToDto);
 
         }else {
             Sort sort = Sort.by(Sort.Direction.fromString(sortType.getSortType()), sortType.getField());
-            Pageable pageable = PageRequest.of(page, size, sort);
-            return productRepository.findProductsByCategory_Id(category_id, pageable).map(productMapper::mapToDto);
+            Pageable pageable = PageRequest.of(page.orElse(PAGE_DEFAULT), size.orElse(PAGE_SIZE), sort);
+            assert categoryType != null;
+            return productRepository.findProductsByCategory_Id(categoryType.getId(), pageable).map(productMapper::mapToDto);
         }
     }
 
+
     //it must be fed first
     @Transactional
-    public Page<ProductResponse> findByProductPartialNameOrCategoryNameOrBrandName(String searchWords, int page, int size, ProductIdSortType sortType) {
+    public Page<ProductResponse> findByProductPartialNameOrCategoryNameOrBrandName(String searchWords,
+                                                                                   Optional<Integer> page, Optional<Integer> size,
+                                                                                   ProductIdSortType sortType) {
         log.info("Retrieving products: page: {}, by size: {}, by searchWords: {}", page, size, searchWords);
-        return search(searchWords, page, size, sortType).map(productMapper::mapToDto);
+        return search(searchWords, page.orElse(PAGE_DEFAULT), size.orElse(PAGE_SIZE), sortType).map(productMapper::mapToDto);
     }
 
     public Page<Product> search(String searchWord, int page, int size, ProductIdSortType sortType) {

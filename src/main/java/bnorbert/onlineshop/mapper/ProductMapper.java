@@ -9,7 +9,6 @@ import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import org.mapstruct.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public abstract class ProductMapper {

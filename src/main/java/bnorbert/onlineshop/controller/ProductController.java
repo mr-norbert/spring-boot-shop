@@ -1,7 +1,9 @@
 package bnorbert.onlineshop.controller;
 
+import bnorbert.onlineshop.domain.BrandType;
 import bnorbert.onlineshop.domain.ProductSortType;
 import bnorbert.onlineshop.domain.ProductIdSortType;
+import bnorbert.onlineshop.domain.CategoryType;
 import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+
+import java.util.Optional;
 
 import static org.springframework.http.ResponseEntity.status;
 
@@ -55,20 +59,20 @@ public class ProductController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/getProductsByCategory")
-    public ResponseEntity<Page<ProductResponse>> getProducts(Long category_id, Long brand_id,
-                                                                       @RequestParam(name = "page") @Min(0) int page,
-                                                                       @RequestParam(name = "size") @Min(1) int size,
+    @GetMapping("/getProductsByCategory/{categoryType}")
+    public ResponseEntity<Page<ProductResponse>> getProductsByCategory(@PathVariable @Valid CategoryType categoryType, BrandType brandType,
+                                                                       @RequestParam(name = "page") @Min(0) Optional<Integer> page,
+                                                                       @RequestParam(name = "size") @Min(1) Optional<Integer> size,
                                                                        @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType,
                                                                        Double priceFrom, Double priceMax) {
-        Page<ProductResponse> products = productService.getProducts(category_id, brand_id, page, size, sortType, priceFrom, priceMax);
+        Page<ProductResponse> products = productService.getProducts(categoryType, brandType, page, size, sortType, priceFrom, priceMax);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @PostMapping("/search")
     public ResponseEntity<Page<ProductResponse>> searchProducts(@RequestBody @Valid SearchDto request,
-                                                                @RequestParam(name = "page") @Min(0) int page,
-                                                                @RequestParam(name = "size") @Min(1) int size,
+                                                                @RequestParam(name = "page") @Min(0) Optional<Integer> page,
+                                                                @RequestParam(name = "size") @Min(1) Optional<Integer> size,
                                                                 @RequestParam(name = "sort") ProductIdSortType sortType) {
         Page<ProductResponse> products = productService.findByProductPartialNameOrCategoryNameOrBrandName(request.getSearchWords(), page, size, sortType);
         return new ResponseEntity<>(products, HttpStatus.OK);

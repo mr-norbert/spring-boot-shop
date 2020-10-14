@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,6 +53,7 @@ class ProductServiceTest {
         productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockCategoryService,
                 mockViewRepository, mockUserService, mockViewMapper, mockBrandService, mockEntityManager);
     }
+
 
     @Test
     void testSave() {
@@ -144,13 +144,17 @@ class ProductServiceTest {
     @Test
     void testGetProducts() {
 
+        final Optional<Integer> page = Optional.of(0);
+        final Optional<Integer> size = Optional.of(20);
+
         final Page<Product> products = new PageImpl<>(Collections.singletonList(new Product()));
-        when(mockProductRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(eq(1L), eq(1L), eq(10.0), eq(50.0), any(Pageable.class))).thenReturn(products);
+        when(mockProductRepository.findProductsByCategory_IdAndBrand_IdAndPriceBetween(eq(1L), eq(1L), eq(5.0), eq(10.0), any(Pageable.class))).thenReturn(products);
 
         when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
 
         final Page<Product> products1 = new PageImpl<>(Collections.singletonList(new Product()));
-        when(mockProductRepository.findProductsByCategory_IdAndPriceBetween(eq(1L), eq(10.0), eq(50.0), any(Pageable.class))).thenReturn(products1);
+        when(mockProductRepository.findProductsByCategory_IdAndPriceBetween(eq(1L), eq(5.0), eq(10.0), any(Pageable.class))).thenReturn(products1);
+
 
         final Page<Product> products2 = new PageImpl<>(Collections.singletonList(new Product()));
         when(mockProductRepository.findProductsByCategory_IdAndBrand_Id(eq(1L), eq(1L), any(Pageable.class))).thenReturn(products2);
@@ -158,19 +162,8 @@ class ProductServiceTest {
         final Page<Product> products3 = new PageImpl<>(Collections.singletonList(new Product()));
         when(mockProductRepository.findProductsByCategory_Id(eq(1L), any(Pageable.class))).thenReturn(products3);
 
-        final Page<ProductResponse> result = productServiceUnderTest.getProducts(1L, 1L, 0, 20, ProductSortType.ID_ASC, 10.0, 50.0);
 
-    }
-
-    @Test
-    void testFindByProductNameOrCategoryNameOrBrandName() {
-        int page = 0;
-        int size = 10;
-        when(mockProductMapper.mapToDto(any(Product.class))).thenReturn(new ProductResponse());
-
-        final Page<ProductResponse> result = productServiceUnderTest.findByProductPartialNameOrCategoryNameOrBrandName("searchWords", page, size, ProductIdSortType.ID_ASC);
-
-        assertFalse(result.isEmpty());
+        final Page<ProductResponse> result = productServiceUnderTest.getProducts(CategoryType.HOME_APPLIANCES, BrandType.BRAND, page, size, ProductSortType.ID_ASC, 5.0, 10.0);
     }
 
     @Test
@@ -199,6 +192,8 @@ class ProductServiceTest {
 
         assertThat(result).isEqualTo(expectedResult);
     }
+
+
 
 
 }
