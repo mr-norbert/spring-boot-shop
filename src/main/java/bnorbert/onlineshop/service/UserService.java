@@ -193,7 +193,6 @@ public class UserService {
     }
 
 
-    //ON DELETE cascade(foreign keys) - ConstraintViolationException
     @Scheduled(cron = "0 0 0 * * ?")//Every day at midnight - 12am
     public void removeNotActivatedUsers() {
         userRepository

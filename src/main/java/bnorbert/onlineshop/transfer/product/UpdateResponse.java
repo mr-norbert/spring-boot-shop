@@ -20,5 +20,4 @@ public class UpdateResponse {
     private String imagePath;
     private int unitInStock;
     private Instant createdDate;
-    private Long categoryId;
 }

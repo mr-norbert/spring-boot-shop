@@ -1,7 +1,5 @@
 package bnorbert.onlineshop.mapper;
 
-import bnorbert.onlineshop.domain.Brand;
-import bnorbert.onlineshop.domain.Category;
 import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.transfer.product.ProductDto;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
@@ -21,9 +19,11 @@ public abstract class ProductMapper {
     @Mapping(target = "unitInStock", source = "productDto.unitInStock")
     @Mapping(target = "isAvailable", source = "productDto.isAvailable")
     @Mapping(target = "createdDate", expression = "java(java.time.Instant.now())")
-    @Mapping(target = "category", source = "category")
-    @Mapping(target = "brand", source = "brand")
-    public abstract Product map(ProductDto productDto, Category category, Brand brand);
+    @Mapping(target = "viewCount", source = "productDto.viewCount", defaultValue = "0")
+    @Mapping(target = "color", source = "productDto.color")
+    @Mapping(target = "categoryName", source = "productDto.categoryName")
+    @Mapping(target = "brandName", source = "productDto.brandName")
+    public abstract Product map(ProductDto productDto);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "product.name")
@@ -32,8 +32,8 @@ public abstract class ProductMapper {
     @Mapping(target = "imagePath", source = "product.imagePath")
     @Mapping(target = "unitInStock", source = "product.unitInStock")
     @Mapping(target = "createdDate", source = "product.createdDate")
-    @Mapping(target = "categoryName", source = "category.name")
-    @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "categoryName", source = "product.categoryName")
+    @Mapping(target = "brandName", source = "product.brandName")
     public abstract ProductResponse mapToDto(Product product);
 
     @Mapping(target = "id", source = "id")
@@ -43,10 +43,10 @@ public abstract class ProductMapper {
     @Mapping(target = "imagePath", source = "product.imagePath")
     @Mapping(target = "unitInStock", source = "product.unitInStock")
     @Mapping(target = "createdDate", source = "product.createdDate")
-    @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "lastModifiedBy", source = "product.lastModifiedBy")
     @Mapping(target = "lastModifiedDate", source = "product.lastModifiedDate")
     public abstract UpdateResponse mapToDto2(Product product);
 
     public abstract List<ProductResponse> entitiesToEntityDTOs(List<Product> products);
+
 }

@@ -5,7 +5,7 @@ import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.ItemMapper;
 import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
-import bnorbert.onlineshop.repository.CopyOfTheProductRepository;
+import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -38,7 +38,7 @@ class CartServiceTest {
     @Mock
     private ProductService mockProductService;
     @Mock
-    private CopyOfTheProductRepository mockCopyOfTheProductRepository;
+    private PantryRepository mockPantryRepository;
     @Mock
     private CartMapper mockCartMapper;
     @Mock
@@ -53,7 +53,7 @@ class CartServiceTest {
     @BeforeEach
     void setUp() {
         initMocks(this);
-        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockCopyOfTheProductRepository, mockCartMapper, mockDiscountService, mockItemMapper, mockCartItemRepository);
+        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper, mockDiscountService, mockItemMapper, mockCartItemRepository);
     }
 
     @Test
@@ -63,8 +63,8 @@ class CartServiceTest {
         request.setProductId(1L);
         request.setProductQuantity(1);
 
-        final Page<CopyOfTheProduct> copyOfTheProducts = new PageImpl<>(Collections.singletonList(new CopyOfTheProduct()));
-        when(mockCopyOfTheProductRepository.findById(eq(1L), any(Pageable.class))).thenReturn(copyOfTheProducts);
+        final Page<Pantry> pantries = new PageImpl<>(Collections.singletonList(new Pantry()));
+        when(mockPantryRepository.findById(eq(1L), any(Pageable.class))).thenReturn(pantries);
 
         when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
         when(mockUserService.getCurrentUser()).thenReturn(new User());
@@ -96,7 +96,7 @@ class CartServiceTest {
 
         when(mockCartMapper.map(any(AddProductToCartRequest.class), eq(new Cart()), any(Product.class))).thenReturn(cartItem1);
 
-        when(mockItemMapper.entitiesToEntityDTOs(Collections.singletonList(new CopyOfTheProduct()))).thenReturn(Collections.singletonList(new AddToCartResponse()));
+        when(mockItemMapper.entitiesToEntityDTOs(Collections.singletonList(new Pantry()))).thenReturn(Collections.singletonList(new AddToCartResponse()));
 
         final Page<AddToCartResponse> result = cartServiceUnderTest.addProductToCartPageableForSlider(request, PageRequest.of(0, 5));
 

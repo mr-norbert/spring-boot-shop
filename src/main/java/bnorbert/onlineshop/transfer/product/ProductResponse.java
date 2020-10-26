@@ -7,8 +7,8 @@ import java.time.Instant;
 @Builder
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @ToString
 public class ProductResponse {
     private Long id;
@@ -18,9 +18,8 @@ public class ProductResponse {
     private String imagePath;
     private int unitInStock;
     private Instant createdDate;
-    private Long categoryId;
+    private String brandName;
     private String categoryName;
-
 
     @Override
     public boolean equals(Object o) {

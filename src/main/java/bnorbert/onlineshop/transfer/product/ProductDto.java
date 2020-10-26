@@ -13,7 +13,6 @@ import java.time.Instant;
 @NoArgsConstructor
 @ToString
 
-
 public class ProductDto {
     @NotEmpty
     private String name;
@@ -24,7 +23,9 @@ public class ProductDto {
     private Instant createdDate;
     @NotNull
     private int unitInStock;
-    private Long categoryId;
-    private Long brandId;
     private Boolean isAvailable;
+    private Integer viewCount;
+    private String color;
+    private String categoryName;
+    private String brandName;
 }

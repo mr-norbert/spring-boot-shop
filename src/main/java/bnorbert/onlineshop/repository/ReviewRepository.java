@@ -10,7 +10,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+
     Optional<Review> findTopByProductAndUserOrderByIdDesc(Product product, User currentUser);
     Page<Review> findReviewsByProductIdAndRatingOrderByIdDesc(long productId, int rating, Pageable pageable);
     Page<Review> findReviewsByProductId(long productId, Pageable pageable);
+
+    //scale out
+    //Page<Review> findReviewsByProductCategoryName(String product_categoryName, Pageable pageable);
 }

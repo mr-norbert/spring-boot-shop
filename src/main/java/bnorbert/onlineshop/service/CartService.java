@@ -6,7 +6,7 @@ import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.ItemMapper;
 import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
-import bnorbert.onlineshop.repository.CopyOfTheProductRepository;
+import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -29,7 +29,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final UserService userService;
     private final ProductService productService;
-    private final CopyOfTheProductRepository copyOfTheProductRepository;
+    private final PantryRepository pantryRepository;
     private final CartMapper cartMapper;
     private final DiscountService discountService;
     private final ItemMapper itemMapper;
@@ -37,12 +37,12 @@ public class CartService {
 
 
     public CartService(CartRepository cartRepository, UserService userService, ProductService productService,
-                       CopyOfTheProductRepository copyOfTheProductRepository, CartMapper cartMapper, DiscountService discountService,
+                       PantryRepository pantryRepository, CartMapper cartMapper, DiscountService discountService,
                        ItemMapper itemMapper, CartItemRepository cartItemRepository) {
         this.cartRepository = cartRepository;
         this.userService = userService;
         this.productService = productService;
-        this.copyOfTheProductRepository = copyOfTheProductRepository;
+        this.pantryRepository = pantryRepository;
         this.cartMapper = cartMapper;
         this.discountService = discountService;
         this.itemMapper = itemMapper;
@@ -54,7 +54,7 @@ public class CartService {
         log.info("Adding product to cart: {}", request);
 
         //Item-based Recommender -> OnlineShopApplication
-        Page<CopyOfTheProduct> copyOfTheProducts = copyOfTheProductRepository
+        Page<Pantry> pantries = pantryRepository
                 .findById(request.getProductId(), pageable);
 
         Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
@@ -70,6 +70,7 @@ public class CartService {
 
         Optional<CartItem> productAndUser = cartItemRepository
                 .findTopByProductAndCartOrderByIdDesc(product, cart);
+
         CartItem cartItem;
         if(productAndUser.isPresent()){
             cartItem = cartItemRepository.
@@ -93,8 +94,8 @@ public class CartService {
         }
         cartRepository.save(cart);
 
-        List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(copyOfTheProducts.getContent());
-        return new PageImpl<>(addToCartResponses, pageable, copyOfTheProducts.getTotalElements());
+        List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
+        return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
 
     }
 

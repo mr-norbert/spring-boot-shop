@@ -10,7 +10,7 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-public class CopyOfTheProduct {
+public class Pantry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

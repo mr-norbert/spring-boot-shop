@@ -22,7 +22,6 @@ public class ProductSteps {
         request.setName("product-III");
         request.setDescription("description");
         request.setPrice(200);
-        request.setCategoryId(1L);
         request.setUnitInStock(100);
         request.setCreatedDate(Instant.now());
 
@@ -31,7 +30,6 @@ public class ProductSteps {
         assertThat(request, notNullValue());
         assertThat(request.getName(), is(request.getName()));
         assertThat(request.getDescription(), is(request.getDescription()));
-        assertThat(request.getCategoryId(), is(request.getCategoryId()));
         assertThat(request.getPrice(), is(request.getPrice()));
         assertThat(request.getUnitInStock(), is(request.getUnitInStock()));
         assertThat(request.getCreatedDate(), is(request.getCreatedDate()));

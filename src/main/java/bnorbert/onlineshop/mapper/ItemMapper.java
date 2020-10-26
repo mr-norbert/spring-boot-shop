@@ -1,6 +1,6 @@
 package bnorbert.onlineshop.mapper;
 
-import bnorbert.onlineshop.domain.CopyOfTheProduct;
+import bnorbert.onlineshop.domain.Pantry;
 import bnorbert.onlineshop.transfer.cart.AddToCartResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,8 +9,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class ItemMapper {
-    @Mapping(target = "id", source = "id")
-    public abstract AddToCartResponse mapToDto(CopyOfTheProduct copyOfTheProducts);
 
-    public abstract List<AddToCartResponse> entitiesToEntityDTOs(List<CopyOfTheProduct> copyOfTheProducts);
+    @Mapping(target = "id", source = "id")
+    public abstract AddToCartResponse mapToDto(Pantry pantries);
+
+    public abstract List<AddToCartResponse> entitiesToEntityDTOs(List<Pantry> pantries);
 }

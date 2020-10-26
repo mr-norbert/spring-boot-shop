@@ -15,8 +15,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -33,7 +31,7 @@ import java.util.Set;
                 @TokenFilterDef(factory = EdgeNGramFilterFactory.class,
                         params = {
                                 @Parameter(name = "minGramSize", value = "1"),
-                                @Parameter(name = "maxGramSize", value = "35")})
+                                @Parameter(name = "maxGramSize", value = "20")})
         })
 
 @EntityListeners(AuditingEntityListener.class)
@@ -45,34 +43,56 @@ public class Product {
     @Field(name = "id_sort", index = Index.NO)
     @SortableField(forField = "id_sort")
     private Long id;
-    @Field//(index = Index.YES, analyze = Analyze.YES, store = Store.NO,
-            (analyzer = @Analyzer(definition = "textanalyzer"))
+
+    @Field(analyzer = @Analyzer(definition = "textanalyzer"))
     private String name;
+
+    @Field(analyze = Analyze.NO)
+    @Facet(name = "price")
     private double price;
+
     private String description;
+
+    @Field(analyze = Analyze.NO)
+    @Facet(name = "color")
+    private String color;
+
     private String imagePath;
+
     private int unitInStock;
+
+    @Field(analyze = Analyze.NO)
+    @Facet(name = "categoryName")
+    private String categoryName;
+
+    @Field(analyze = Analyze.NO)
+    @Facet(name = "brandName")
+    private String brandName;
+
+    @Field(name = "view_count_sort", index = Index.NO)
+    @SortableField(forField = "view_count_sort")
+    private Integer viewCount = 0;
+
     @Field
     private Boolean isAvailable;
+
     private Instant createdDate;
     @CreatedBy
     private String createdBy;
+
     @LastModifiedBy
     private String lastModifiedBy;
+
     @LastModifiedDate
     private Instant lastModifiedDate = Instant.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @IndexedEmbedded
-    private Brand brand;
+    //@ManyToOne(fetch = FetchType.LAZY)
+    //@IndexedEmbedded
+    //private Brand brand;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @IndexedEmbedded
-    private Category category;
-
-    @ManyToMany(mappedBy = "products")
-    private Set<CopyOfTheProduct> copyOfTheProducts = new HashSet<>();
-
+    //@ManyToOne(fetch = FetchType.LAZY)
+    //@IndexedEmbedded
+    //private Category category;
 
 //@Override
     //public boolean equals(Object o) {
