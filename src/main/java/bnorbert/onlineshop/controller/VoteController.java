@@ -1,8 +1,8 @@
 package bnorbert.onlineshop.controller;
 
 import bnorbert.onlineshop.service.VoteService;
-import bnorbert.onlineshop.transfer.vote.VoteAnswersDto;
-import bnorbert.onlineshop.transfer.vote.VoteDto;
+import bnorbert.onlineshop.transfer.vote.CreateVoteRequest;
+import bnorbert.onlineshop.transfer.vote.VoteAnswersRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +20,13 @@ public class VoteController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> voteComments(@RequestBody VoteDto request) {
+    public ResponseEntity<Void> voteComments(@RequestBody CreateVoteRequest request) {
         voteService.voteComments(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/answers")
-    public ResponseEntity<Void> voteAnswers(@RequestBody VoteAnswersDto request) {
+    public ResponseEntity<Void> voteAnswers(@RequestBody VoteAnswersRequest request) {
         voteService.voteAnswers(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }

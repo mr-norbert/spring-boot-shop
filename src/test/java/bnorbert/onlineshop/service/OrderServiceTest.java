@@ -2,11 +2,17 @@ package bnorbert.onlineshop.service;
 
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.mapper.OrderMapper;
-import bnorbert.onlineshop.repository.*;
-import bnorbert.onlineshop.transfer.order.OrderDto;
+import bnorbert.onlineshop.repository.CartItemRepository;
+import bnorbert.onlineshop.repository.CartRepository;
+import bnorbert.onlineshop.repository.OrderRepository;
+import bnorbert.onlineshop.repository.ProductRepository;
+import bnorbert.onlineshop.transfer.address.CreateAddressRequest;
+import bnorbert.onlineshop.transfer.order.OrderResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -14,11 +20,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+@ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
     @Mock
@@ -32,11 +37,7 @@ class OrderServiceTest {
     @Mock
     private OrderMapper mockOrderMapper;
     @Mock
-    private ShippingAddressRepository mockShippingAddressRepository;
-    @Mock
     private CartItemRepository mockCartItemRepository;
-    @Mock
-    private ShippingAddressService mockShippingAddressService;
     @Mock
     private ProductRepository mockProductRepository;
 
@@ -44,49 +45,71 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
-        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper, mockShippingAddressRepository, mockCartItemRepository, mockShippingAddressService, mockProductRepository);
+        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper, mockCartItemRepository, mockProductRepository);
     }
 
     @Test
     void testCreateOrder() {
+        CreateAddressRequest request = new CreateAddressRequest();
+        request.setAddress("address");
 
-        final OrderDto request = new OrderDto();
-        request.setAddressId(1L);
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
-        when(mockShippingAddressService.getAddress(1L)).thenReturn(new ShippingAddress());
-        when(mockShippingAddressRepository.findTopByIdAndUser(1L, new User())).thenReturn(Optional.of(new ShippingAddress()));
-        when(mockOrderMapper.map(any(OrderDto.class), eq(new ShippingAddress()), eq(new User()))).thenReturn(new Order());
+        Product product = new Product();
+        product.setId(1L);
+        product.setName("name");
+        product.setPrice(5.0);
+        product.setDescription("description");
+        product.setImagePath("imagePath");
+        product.setUnitInStock(90);
+        product.setCreatedDate(Instant.now());
+        product.setCreatedBy("createdBy");
 
+        Cart cart = new Cart();
+        cart.setId(user.getId());
+        cart.setUser(user);
+        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(cart));
 
-        final CartItem cartItem = new CartItem();
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        CartItem cartItem = new CartItem();
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(5.0);
         cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
-        final Product product = new Product();
-        product.setId(1L);
-        product.setName("name");
-        product.setPrice(1.0);
-        product.setDescription("description");
-        product.setImagePath("imagePath");
-        product.setUnitInStock(200);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
-        product.setCreatedBy("createdBy");
-        product.setLastModifiedBy("lastModifiedBy");
         cartItem.setProduct(product);
-        cartItem.setCart(new Cart());
+        cartItem.setCart(cart);
+        cartItem.setUser(user);
         cartItem.setOrder(new Order());
-        final List<CartItem> cartItemList = Collections.singletonList(cartItem);
-        when(mockCartItemRepository.findByCart(new Cart())).thenReturn(cartItemList);
+
+        List<CartItem> cartItemList = Collections.singletonList(cartItem);
+        when(mockCartItemRepository.findByCart(any(Cart.class))).thenReturn(cartItemList);
+
+        //when(mockOrderMapper.map(any(CreateAddressRequest.class), any(User.class))).thenReturn(new Order());
+
+        when(mockProductRepository.save(any(Product.class))).thenReturn(product);
+
+        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
 
         when(mockOrderRepository.save(any(Order.class))).thenReturn(new Order());
 
         orderServiceUnderTest.createOrder(request);
 
-        verify(mockCartService).clearCart(new Cart());
+        verify(mockCartService).clearCart(any(Cart.class));
+    }
+
+
+    @Test
+    void testGetOrderId() {
+        Order order = new Order();
+        order.setId(1L);
+        when(mockOrderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        when(mockOrderMapper.mapToOrderResponse(any(Order.class))).thenReturn(new OrderResponse());
+
+        OrderResponse result = orderServiceUnderTest.getOrderId(1L);
     }
 }

@@ -21,14 +21,6 @@ public class User {
     private boolean accountNonLocked;
     private Instant createdDate;
 
-    @OneToMany(mappedBy="user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<CartItem> cartItems = new HashSet<>();
-
-    public void addCartItem(CartItem cartItem) {
-        cartItems.add(cartItem);
-        cartItem.setUser(this);
-    }
-
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -148,7 +140,7 @@ public class User {
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-
+/*
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -165,4 +157,8 @@ public class User {
         result = 31 * result + (email != null ? email.hashCode() : 0); // ?-if true, :- else return 0
         return result;
     }
+
+ */
+
+
 }

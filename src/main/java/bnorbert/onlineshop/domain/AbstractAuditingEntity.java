@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.EntityListeners;
 import javax.persistence.MappedSuperclass;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 
 @MappedSuperclass
@@ -20,13 +20,13 @@ public abstract class AbstractAuditingEntity  {
     private String createdBy;
 
     @CreatedDate
-    private Instant createdDate = Instant.now();
+    private LocalDateTime createdDate = LocalDateTime.now();
 
     @LastModifiedBy
     private String lastModifiedBy;
 
     @LastModifiedDate
-    private Instant lastModifiedDate = Instant.now();
+    private LocalDateTime lastModifiedDate = LocalDateTime.now();
 
     public String getCreatedBy() {
         return createdBy;
@@ -34,14 +34,6 @@ public abstract class AbstractAuditingEntity  {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
-    }
-
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
     }
 
     public String getLastModifiedBy() {
@@ -52,11 +44,19 @@ public abstract class AbstractAuditingEntity  {
         this.lastModifiedBy = lastModifiedBy;
     }
 
-    public Instant getLastModifiedDate() {
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public LocalDateTime getLastModifiedDate() {
         return lastModifiedDate;
     }
 
-    public void setLastModifiedDate(Instant lastModifiedDate) {
+    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
     }
 }

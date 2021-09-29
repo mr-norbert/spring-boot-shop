@@ -5,18 +5,20 @@ import bnorbert.onlineshop.mapper.VoteMapper;
 import bnorbert.onlineshop.repository.AnswerRepository;
 import bnorbert.onlineshop.repository.CommentRepository;
 import bnorbert.onlineshop.repository.VoteRepository;
-import bnorbert.onlineshop.transfer.vote.VoteAnswersDto;
-import bnorbert.onlineshop.transfer.vote.VoteDto;
+import bnorbert.onlineshop.transfer.vote.CreateVoteRequest;
+import bnorbert.onlineshop.transfer.vote.VoteAnswersRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+@ExtendWith(MockitoExtension.class)
 class VoteServiceTest {
 
     @Mock
@@ -34,63 +36,74 @@ class VoteServiceTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
         voteServiceUnderTest = new VoteService(mockVoteRepository, mockAnswerRepository, mockCommentRepository, mockAuthService, mockVoteMapper);
     }
 
     @Test
     void testVoteComments() {
-        final VoteDto request = new VoteDto(CommentsVoteType.HELPFUL, 1L);
+        CreateVoteRequest request = new CreateVoteRequest();
 
-        when(mockCommentRepository.findById(1L)).thenReturn(Optional.of(new Comment()));
-        when(mockVoteRepository.findTopByCommentAndUserOrderByIdDesc(any(Comment.class), eq(new User()))).thenReturn(Optional.of(new Vote()));
-        when(mockAuthService.getCurrentUser()).thenReturn(new User());
-        when(mockVoteMapper.map(any(VoteDto.class), any(Comment.class), eq(new User()))).thenReturn(new Vote());
+        request.setCommentsVoteType(CommentsVoteType.HELPFUL);
+        request.setCommentId(1L);
+
+        Comment comment = new Comment();
+        comment.setId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
+
+        when(mockCommentRepository.findById(comment.getId())).thenReturn(Optional.of(comment));
+
+
+        //Vote vote = new Vote();
+        //when(mockVoteRepository.findTopByCommentAndUserOrderByIdDesc(any(Comment.class), any(User.class))).thenReturn(Optional.of(vote));
+
+        when(mockAuthService.getCurrentUser()).thenReturn(user);
+
+
+        when(mockVoteMapper.map(any(CreateVoteRequest.class), any(Comment.class), any(User.class))).thenReturn(new Vote());
+
+
         when(mockVoteRepository.save(any(Vote.class))).thenReturn(new Vote());
-        when(mockCommentRepository.save(any(Comment.class))).thenReturn(new Comment());
+
+        when(mockCommentRepository.save(any(Comment.class))).thenReturn(comment);
+
 
         voteServiceUnderTest.voteComments(request);
     }
 
-    @Test
-    void testVoteCommentsThenReturnResourceNotFound() {
-        final VoteDto request = new VoteDto(CommentsVoteType.HELPFUL, 1L);
-
-        final Comment comment1 = new Comment();
-        comment1.setId(1L);
-        comment1.setText("text");
-        comment1.setUser(new User());
-        comment1.setReview(new Review());
-        comment1.setVoteCount(1);
-
-        final Optional<Comment> comment = Optional.of(comment1);
-        when(mockCommentRepository.findById(0L)).thenReturn(comment);
-
-        //final Optional<Vote> vote = Optional.of(new Vote(CommentsVoteType.HELPFUL, 1L , comment1, new User(), new Answer()));//new constructor
-        //when(mockVoteRepository.findTopByCommentAndUserOrderByIdDesc(new Comment(), new User())).thenReturn(vote);
-
-        when(mockVoteRepository.findTopByCommentAndUserOrderByIdDesc(any(Comment.class), eq(new User()))).thenReturn(Optional.of(new Vote()));
-        when(mockAuthService.getCurrentUser()).thenReturn(new User());
-        when(mockVoteMapper.map(any(VoteDto.class), any(Comment.class), eq(new User()))).thenReturn(new Vote());
-        when(mockVoteRepository.save(any(Vote.class))).thenReturn(new Vote());
-        when(mockCommentRepository.save(any(Comment.class))).thenReturn(new Comment());
-
-        voteServiceUnderTest.voteComments(request);
-    }
 
     @Test
     void testVoteAnswers() {
 
-        final VoteAnswersDto request = new VoteAnswersDto(AnswersVoteType.UPVOTE, 1L);
+       VoteAnswersRequest request = new VoteAnswersRequest();
+       request.setAnswersVoteType(AnswersVoteType.UPVOTE);
+       request.setAnswerId(1L);
 
-        when(mockAnswerRepository.findById(1L)).thenReturn(Optional.of(new Answer()));
-        when(mockVoteRepository.findTopByAnswerAndUserOrderByIdDesc(any(Answer.class), eq(new User()))).thenReturn(Optional.of(new Vote()));
-        when(mockAuthService.getCurrentUser()).thenReturn(new User());
-        when(mockVoteMapper.map2(any(VoteAnswersDto.class), any(Answer.class), eq(new User()))).thenReturn(new Vote());
-        when(mockVoteRepository.save(any(Vote.class))).thenReturn(new Vote());
-        when(mockAnswerRepository.save(any(Answer.class))).thenReturn(new Answer());
+       Answer answer = new Answer();
+       answer.setId(1L);
 
+       User user = new User();
+       user.setId(1L);
+       user.setEmail("email@gmail.com");
 
-        voteServiceUnderTest.voteAnswers(request);
+       when(mockAnswerRepository.findById(answer.getId())).thenReturn(Optional.of(answer));
+
+       //Vote vote = new Vote();
+
+       //when(mockVoteRepository.findTopByAnswerAndUserOrderByIdDesc(eq(answer), eq(user))).thenReturn(Optional.of(new Vote()));
+
+       when(mockAuthService.getCurrentUser()).thenReturn(user);
+
+       when(mockVoteMapper.map2(any(VoteAnswersRequest.class), any(Answer.class), any(User.class))).thenReturn(new Vote());
+
+       when(mockVoteRepository.save(any(Vote.class))).thenReturn(new Vote());
+
+       when(mockAnswerRepository.save(any(Answer.class))).thenReturn(answer);
+
+       voteServiceUnderTest.voteAnswers(request);
     }
+
+
 }

@@ -1,24 +1,29 @@
 package bnorbert.onlineshop.controller;
 
-import bnorbert.onlineshop.domain.*;
+import bnorbert.onlineshop.domain.ProductSortTypeEnum;
 import bnorbert.onlineshop.service.ProductService;
-import bnorbert.onlineshop.transfer.product.ProductDto;
+import bnorbert.onlineshop.transfer.product.CreateProductRequest;
+import bnorbert.onlineshop.transfer.product.ImageResponse;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import bnorbert.onlineshop.transfer.search.SearchRequest;
 import bnorbert.onlineshop.transfer.search.SearchResponse;
-import org.springframework.data.domain.Page;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
-
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
-import static org.springframework.http.ResponseEntity.status;
+import java.util.stream.Collectors;
 
 @CrossOrigin
 @RestController
@@ -27,85 +32,135 @@ public class ProductController {
 
     private final ProductService productService;
 
+
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
     @PostMapping
-    public ResponseEntity<Void> save(@RequestBody ProductDto saveProductRequest) {
-        productService.save(saveProductRequest);
+    public ResponseEntity<ProductResponse> createProduct(@RequestBody CreateProductRequest request) {
+        productService.createProduct(request);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+
     @GetMapping("/product/{id}")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
-        return status(HttpStatus.OK).body(productService.getProductId(id));
+    public ProductResponse getProduct(@PathVariable Long id) {
+        return productService.getProductId(id);
     }
 
 
     @PutMapping("/update{id}")
     public ResponseEntity<UpdateResponse> updateProduct(
-            @PathVariable("id") long id, @RequestBody @Valid ProductDto request){
+            @PathVariable("id") long id, @RequestBody @Valid CreateProductRequest request){
         UpdateResponse product = productService.updateProduct(id, request);
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity deleteProduct(@PathVariable("id") long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable("id") long id) {
         productService.deleteProduct(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/getProductsByCategory/{categoryType}")
-    public ResponseEntity<Page<ProductResponse>> getProductsByCategory(@PathVariable @Valid CategoryType categoryType, BrandType brandType,
-                                                                       @RequestParam(name = "page") @Min(0) Optional<Integer> page,
-                                                                       @RequestParam(name = "size", required = false) Optional<Integer> size,
-                                                                       @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType,
-                                                                       Double priceFrom, Double priceMax) {
-        Page<ProductResponse> products = productService.getProducts(categoryType, brandType, page, size, sortType, priceFrom, priceMax);
-        return new ResponseEntity<>(products, HttpStatus.OK);
+
+    @PostMapping("/uploadFile")
+    public ResponseEntity<byte[]> uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
+        productService.storeFile(file);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(file.getBytes());
     }
 
+    @PostMapping("/upload-file")
+    @ResponseBody
+    public ImageResponse storeFile(@RequestParam("file") MultipartFile file) throws IOException {
+        productService.storeFile(file);
+
+        return new ImageResponse(file.getOriginalFilename(), file.getContentType());
+    }
+
+    @PostMapping("/uploadMultipleFiles")
+    @ResponseBody
+    public List<ImageResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
+        return Arrays.stream(files)
+                .map(file -> {
+                    try {
+                        storeFile(file);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return new ImageResponse(file.getOriginalFilename(), file.getContentType());
+
+                }).collect(Collectors.toList());
+    }
+
+
+    @GetMapping("/files")
+    public ResponseEntity<List<ImageResponse>> getListFiles() {
+        List<ImageResponse> imageResponses = productService.loadAll().map(path -> {
+            String filename = path.getFileName().toString();
+            String url = MvcUriComponentsBuilder
+                    .fromMethodName(ProductController.class, "downloadFile", path.getFileName().toString()).build().toString();
+
+            return new ImageResponse(filename, url);
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.OK).body(imageResponses);
+    }
+
+
+    @GetMapping("/image/{id:.+}")
+    public ResponseEntity<byte[]> getImage(@PathVariable//("id")
+                                                       long id) {
+        byte[] imageBytes = productService.getImage(id);
+
+        //ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(imageBytes, HttpStatus.OK);
+        //return responseEntity;
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(imageBytes);
+    }
+
+    @GetMapping("/download/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+
+        Resource resource = productService.load(filename);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+
+    @GetMapping("/findMatch")
+    public SearchResponse findMatches(@RequestParam(value = "specification") int specification,
+        @RequestParam(value = "spec") int secondSpec,
+        @RequestParam(value = "name") Optional<String> name,
+        @RequestParam(value = "category") String categoryName,
+        @RequestParam(name = "sort") ProductSortTypeEnum sortType){
+        return productService.findMatches(specification, secondSpec, name.orElse(""), categoryName, sortType);
+    }
 
     private static final int PAGE_DEFAULT = 0;
-   @PostMapping("/search")
-   public SearchResponse search(@RequestParam(value = "category", required = false) String categoryName,
-                                @RequestParam(value = "brand", required = false) String brandName,
-                                @RequestParam(value = "color", required = false) String color,
-                                @RequestParam(value = "searchWord", required = false) String searchWord,
-                                @RequestParam(value = "price", required = false) Double price,
-                                @RequestParam(value = "priceMax", required = false) Double priceMax,
-                                @RequestParam(name = "page", required = false) Optional<Integer> page){
-       return productService.search(new SearchRequest(categoryName, brandName, color, searchWord, price, priceMax, page.orElse(PAGE_DEFAULT)));
-   }
-
-
-
-    @PostMapping("/createProductLombok")
-    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductDto request) {
-        return new ResponseEntity<>(productService.createProductLombok(request), HttpStatus.CREATED);
+    @PostMapping("/search")
+    public SearchResponse search(@RequestParam(value = "category", required = false) String categoryName,
+                                  @RequestParam(value = "brand", required = false) String brandName,
+                                  @RequestParam(value = "color", required = false) String color,
+                                  @RequestParam(value = "searchWord", required = false) String searchWord,
+                                  @RequestParam(value = "price", required = false) Double price,
+                                  @RequestParam(value = "priceMax", required = false) Double priceMax,
+                                  @RequestParam(name = "page") @NotNull Optional<Integer> page,
+                                  @RequestParam(name = "sort") ProductSortTypeEnum sortType
+    ) {
+        return productService.search(new SearchRequest(categoryName, brandName, color, searchWord, price, priceMax,
+                page.orElse(PAGE_DEFAULT)), sortType);
     }
 
 
-    @GetMapping("/productLombok/{id}")
-    public ResponseEntity<ProductResponse> getProductLombok(@PathVariable Long id) {
-        return new ResponseEntity<>(productService.getProductIdLombok(id), HttpStatus.OK);
-    }
 
-    @GetMapping("/getProductsLombok")
-    public ResponseEntity<Page<ProductResponse>> getProductsLombok(String categoryName,
-                                                                       @RequestParam(name = "page") @Min(0) int page,
-                                                                       @RequestParam(name = "size") @Min(1) int size,
-                                                                       @RequestParam(name = "sort", defaultValue = "ID_ASC") ProductSortType sortType) {
-        Page<ProductResponse> products = productService.getProductsLombok(categoryName, page, size, sortType);
-        return new ResponseEntity<>(products, HttpStatus.OK);
-    }
 
-    @GetMapping("/getAllLombok")
-    public ResponseEntity<List<ProductResponse>> getAllLombok() {
-        List<ProductResponse> products = productService.getAllLombok();
-        return new ResponseEntity<>(products, HttpStatus.OK);
-    }
+
 
 }
+
+

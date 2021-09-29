@@ -2,23 +2,21 @@ package bnorbert.onlineshop.transfer.cart;
 
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 
-import lombok.ToString;
-
 import javax.validation.constraints.NotNull;
 
-@ToString
+
 public class UpdateQuantityRequest {
 
     @NotNull
-    private Long productId;
+    private long productId;
     @NotNull
     private int qty;
 
-    public Long getProductId() {
+    public long getProductId() {
         return productId;
     }
 
-    public void setProductId(Long productId) {
+    public void setProductId(long productId) {
         this.productId = productId;
     }
 
@@ -30,5 +28,13 @@ public class UpdateQuantityRequest {
 
     public void setQty(int qty) {
         this.qty = qty;
+    }
+
+    @Override
+    public String toString() {
+        return "UpdateQuantityRequest{" +
+                "productId=" + productId +
+                ", qty=" + qty +
+                '}';
     }
 }

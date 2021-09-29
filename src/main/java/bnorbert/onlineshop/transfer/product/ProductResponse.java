@@ -9,7 +9,7 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+
 public class ProductResponse {
     private Long id;
     private String name;
@@ -46,5 +46,20 @@ public class ProductResponse {
         result = 31 * result + (description != null ? description.hashCode() : 0);
         result = 31 * result + (imagePath != null ? imagePath.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ProductResponse{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", price=" + price +
+                ", description='" + description + '\'' +
+                ", imagePath='" + imagePath + '\'' +
+                ", unitInStock=" + unitInStock +
+                ", createdDate=" + createdDate +
+                ", brandName='" + brandName + '\'' +
+                ", categoryName='" + categoryName + '\'' +
+                '}';
     }
 }

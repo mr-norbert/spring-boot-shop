@@ -7,7 +7,9 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -22,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+@ExtendWith(MockitoExtension.class)
 class CartControllerTest {
 
     @Mock
@@ -33,7 +35,7 @@ class CartControllerTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
+
         cartControllerUnderTest = new CartController(mockCartService);
     }
 
@@ -44,7 +46,7 @@ class CartControllerTest {
         request.setProductQuantity(5);
 
         final Page<AddToCartResponse> addToCartResponses = new PageImpl<>(Collections.singletonList(new AddToCartResponse()));
-        when(mockCartService.addProductToCartPageableForSlider(any(AddProductToCartRequest.class), any(Pageable.class))).thenReturn(addToCartResponses);
+        when(mockCartService.addProductToCart(any(AddProductToCartRequest.class), any(Pageable.class))).thenReturn(addToCartResponses);
 
         final ResponseEntity<Page<AddToCartResponse>> result = cartControllerUnderTest.addProductToCart(request, PageRequest.of(0, 4));
 

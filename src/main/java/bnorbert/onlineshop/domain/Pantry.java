@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -23,4 +22,22 @@ public class Pantry {
     private Set<Product> products = new HashSet<>();
 
 
+    public void addProduct(Product product) {
+        products.add(product);
+        product.getPantries().add(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pantry pantry = (Pantry) o;
+        return id == pantry.id &&
+                Objects.equals(products, pantry.products);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, products);
+    }
 }

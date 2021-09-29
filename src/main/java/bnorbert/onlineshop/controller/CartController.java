@@ -29,7 +29,7 @@ public class CartController {
     @PutMapping("/discoverAdditionalProducts")
     public ResponseEntity<Page<AddToCartResponse>> addProductToCart(
             @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
-        Page<AddToCartResponse> carts = cartService.addProductToCartPageableForSlider(request, pageable);
+        Page<AddToCartResponse> carts = cartService.addProductToCart(request, pageable);
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
@@ -53,24 +53,6 @@ public class CartController {
         cartService.removeProductFromCart(request);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
-/*
-
-    @PutMapping("/discount")
-    public ResponseEntity<DiscountResponse> addDiscount(
-            @RequestBody @Valid DiscountRequest request) {
-        DiscountResponse cart = cartService.addDiscount(request);
-        return new ResponseEntity<>(cart, HttpStatus.OK);
-    }
-
-    @DeleteMapping("/discount")
-    public ResponseEntity<DiscountResponse> removeDiscount(
-            @RequestBody @Valid DiscountRequest request) {
-        DiscountResponse cart = cartService.removeDiscount(request);
-        return new ResponseEntity<>(cart, HttpStatus.OK);
-    }
-
- */
 
     @PostMapping("/paymentIntent")
     public ResponseEntity<String> payment(@RequestBody PaymentIntentDto request) throws StripeException {

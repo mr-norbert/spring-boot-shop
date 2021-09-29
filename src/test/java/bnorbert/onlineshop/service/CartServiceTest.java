@@ -7,11 +7,12 @@ import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
-import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -22,13 +23,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+
+@ExtendWith(MockitoExtension.class)
 class CartServiceTest {
 
     @Mock
@@ -42,8 +42,6 @@ class CartServiceTest {
     @Mock
     private CartMapper mockCartMapper;
     @Mock
-    private DiscountService mockDiscountService;
-    @Mock
     private ItemMapper mockItemMapper;
     @Mock
     private CartItemRepository mockCartItemRepository;
@@ -52,68 +50,142 @@ class CartServiceTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
-        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper, mockDiscountService, mockItemMapper, mockCartItemRepository);
+        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper,  mockItemMapper, mockCartItemRepository);
     }
 
     @Test
-    void testAddProductToCartPageableForSlider() {
+    void testAddProductToCart() {
 
-        final AddProductToCartRequest request = new AddProductToCartRequest();
+        AddProductToCartRequest request = new AddProductToCartRequest();
         request.setProductId(1L);
-        request.setProductQuantity(1);
+        request.setProductQuantity(5);
 
-        final Page<Pantry> pantries = new PageImpl<>(Collections.singletonList(new Pantry()));
-        when(mockPantryRepository.findById(eq(1L), any(Pageable.class))).thenReturn(pantries);
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
-        when(mockUserService.getUser(1L)).thenReturn(new User());
-        when(mockCartRepository.save(new Cart())).thenReturn(new Cart());
-
-        final CartItem cartItem1 = new CartItem();
-        cartItem1.setId(1L);
-        cartItem1.setQty(1);
-        cartItem1.setSubTotal(5.0);
-        cartItem1.setCreatedDate(Instant.ofEpochSecond(0L));
-        cartItem1.setCreatedBy("createdBy");
-        final Product product = new Product();
+        Product product = new Product();
         product.setId(1L);
         product.setName("name");
         product.setPrice(5.0);
         product.setDescription("description");
-        product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
+        product.setCreatedDate(Instant.now());
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
-        cartItem1.setProduct(product);
-        cartItem1.setCart(new Cart());
-        cartItem1.setOrder(new Order());
-        final Optional<CartItem> cartItem = Optional.of(cartItem1);
-        when(mockCartItemRepository.findTopByProductAndCartOrderByIdDesc(any(Product.class), eq(new Cart()))).thenReturn(cartItem);
+
+        Pantry pantry = new Pantry();
+        pantry.setId(1L);
+        Page<Pantry> pantries = new PageImpl<>(Collections.singletonList(pantry));
+        when(mockPantryRepository.findById(eq(1L), any(Pageable.class))).thenReturn(pantries);
+
+        Cart cart = new Cart();
+        cart.setId(user.getId());
+        cart.setUser(user);
+        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(cart));
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        when(mockCartRepository.save(cart)).thenReturn(cart);
+
+        when(mockProductService.getProduct(product.getId())).thenReturn(product);
+
+        CartItem cartItem = new CartItem();
+        cartItem.setCart(cart);
+        cartItem.setUser(user);
+        cartItem.setProduct(product);
+        cartItem.setQty(5);
+        cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
+
+        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
+
+        when(mockCartMapper.map(any(AddProductToCartRequest.class), any(Cart.class), any(Product.class))).thenReturn(cartItem);
+
+        when(mockItemMapper.entitiesToEntityDTOs(Collections.singletonList(pantry)))
+                .thenReturn(Collections.singletonList(new AddToCartResponse()));
 
 
-        when(mockCartMapper.map(any(AddProductToCartRequest.class), eq(new Cart()), any(Product.class))).thenReturn(cartItem1);
+        final Page<AddToCartResponse> result = cartServiceUnderTest.addProductToCart(request, PageRequest.of(0, 4));
 
-        when(mockItemMapper.entitiesToEntityDTOs(Collections.singletonList(new Pantry()))).thenReturn(Collections.singletonList(new AddToCartResponse()));
-
-        final Page<AddToCartResponse> result = cartServiceUnderTest.addProductToCartPageableForSlider(request, PageRequest.of(0, 5));
+        //verify(mockPantryRepository).findById(anyLong());
+        //verify(mockCartRepository).findByUser_Id(anyLong());
+        //verify(mockCartRepository).save(any(Cart.class));
+        //verify(mockUserService).getUser(anyLong());
+        //verify(mockProductService).getProduct(anyLong());
 
     }
+
 
     @Test
     void testClearCart() {
 
-        final Cart cart = new Cart();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        final CartItem cartItem = new CartItem();
+        Cart cart = new Cart();
+        cart.setId(user.getId());
+
+        CartItem cartItem = new CartItem();
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(20.0);
         cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
-        final Product product = new Product();
+        List<CartItem> cartItemList = Collections.singletonList(cartItem);
+        when(mockCartItemRepository.findByCart(any(Cart.class))).thenReturn(cartItemList);
+
+        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
+
+        when(mockCartRepository.save(any(Cart.class))).thenReturn(cart);
+
+        cartServiceUnderTest.clearCart(cart);
+
+        verify(mockCartItemRepository).findByCart(any(Cart.class));
+        verify(mockCartRepository).save(any(Cart.class));
+    }
+
+
+
+    @Test
+    void testGetCart() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
+
+        Cart cart = new Cart();
+        cart.setId(user.getId());
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        when(mockCartRepository.findByUser_Id(user.getId())).thenReturn(Optional.of(cart));
+
+        when(mockCartMapper.mapToCartResponse(cart)).thenReturn(new CartResponse());
+
+        final CartResponse result = cartServiceUnderTest.getCart();
+
+    }
+
+
+    @Test
+    void testUpdateCart() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
+
+        UpdateQuantityRequest request = new UpdateQuantityRequest();
+        request.setProductId(1L);
+        request.setQty(2);
+
+        Cart cart = new Cart();
+        cart.setUser(user);
+        cart.setId(user.getId());
+
+        when(mockCartRepository.findByUser_Id(user.getId())).thenReturn(Optional.of(cart));
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        Product product = new Product();
         product.setId(1L);
         product.setName("name");
         product.setPrice(20.0);
@@ -123,174 +195,178 @@ class CartServiceTest {
         product.setCreatedDate(Instant.ofEpochSecond(0L));
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
+        when(mockProductService.getProduct(product.getId())).thenReturn(product);
+        
+        CartItem cartItem = new CartItem();
+        cartItem.setId(1L);
+        cartItem.setQty(5);
+        cartItem.setSubTotal(40.0);
+        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        cartItem.setCreatedBy("createdBy");
         cartItem.setProduct(product);
-        cartItem.setCart(new Cart());
-        cartItem.setOrder(new Order());
-        final List<CartItem> cartItemList = Collections.singletonList(cartItem);
-        when(mockCartItemRepository.findByCart(new Cart())).thenReturn(cartItemList);
-
-
+        cartItem.setUser(user);
+        cartItem.setCart(cart);
+        when(mockCartItemRepository.findTop1ByProductIdAndCart_Id(product.getId(), cart.getId())).thenReturn(Optional.of(cartItem));
         when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
 
-        when(mockCartRepository.save(new Cart())).thenReturn(new Cart());
-
-        cartServiceUnderTest.clearCart(cart);
-    }
-
-    @Test
-    void testGetCart() {
-
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockCartRepository.save(new Cart())).thenReturn(new Cart());
-        when(mockCartMapper.mapToDto(new Cart())).thenReturn(new CartResponse());
-
-        final CartResponse result = cartServiceUnderTest.getCart();
-
-    }
-
-    @Test
-    void testUpdateCart() {
-
-        final UpdateQuantityRequest request = new UpdateQuantityRequest();
-        request.setProductId(1L);
-        request.setQty(5);
-
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        //when(mockUserService.getCurrentUser()).thenReturn(new User());
-
-
-        final CartItem cartItem1 = new CartItem();
-        cartItem1.setId(1L);
-        cartItem1.setQty(5);
-        cartItem1.setSubTotal(20.0);
-        cartItem1.setCreatedDate(Instant.ofEpochSecond(0L));
-        cartItem1.setCreatedBy("createdBy");
-        final Product product = new Product();
-        product.setId(1L);
-        product.setName("name");
-        product.setPrice(4.0);
-        product.setDescription("description");
-        product.setImagePath("imagePath");
-        product.setUnitInStock(200);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
-        product.setCreatedBy("createdBy");
-        product.setLastModifiedBy("lastModifiedBy");
-        cartItem1.setProduct(product);
-        cartItem1.setCart(new Cart());
-        cartItem1.setOrder(new Order());
-        final Optional<CartItem> cartItem = Optional.of(cartItem1);
-        when(mockCartItemRepository.findTop1ByProductIdAndCartOrderByIdDesc(1L, new Cart())).thenReturn(cartItem);
-
-
-        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem1);
-
-        when(mockCartRepository.save(new Cart())).thenReturn(new Cart());
-
+        when(mockCartRepository.save(any(Cart.class))).thenReturn(cart);
 
         cartServiceUnderTest.updateCart(request);
-
     }
+
+
 
     @Test
     void testRemoveProductFromCart() {
 
-        final RemoveProductFromCartRequest request = new RemoveProductFromCartRequest();
+        RemoveProductFromCartRequest request = new RemoveProductFromCartRequest();
         request.setProductId(1L);
 
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-
-        final CartItem cartItem1 = new CartItem();
-        cartItem1.setId(1L);
-        cartItem1.setQty(1);
-        cartItem1.setSubTotal(5.0);
-        cartItem1.setCreatedDate(Instant.ofEpochSecond(0L));
-        cartItem1.setCreatedBy("createdBy");
-        final Product product = new Product();
+        Product product = new Product();
         product.setId(1L);
         product.setName("name");
-        product.setPrice(5.0);
+        product.setPrice(20.0);
         product.setDescription("description");
         product.setImagePath("imagePath");
-        product.setUnitInStock(10);
+        product.setUnitInStock(0);
         product.setCreatedDate(Instant.ofEpochSecond(0L));
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
-        cartItem1.setProduct(product);
-        cartItem1.setCart(new Cart());
-        cartItem1.setOrder(new Order());
-        final Optional<CartItem> cartItem = Optional.of(cartItem1);
-        when(mockCartItemRepository.findTop1ByProductIdAndCartOrderByIdDesc(1L, new Cart())).thenReturn(cartItem);
 
-        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem1);
+        Cart cart = new Cart();
+        cart.setUser(user);
+        cart.setId(user.getId());
 
-        when(mockCartRepository.save(new Cart())).thenReturn(new Cart());
+        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(cart));
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        CartItem cartItem = new CartItem();
+        cartItem.setId(1L);
+        cartItem.setQty(5);
+        cartItem.setSubTotal(40.0);
+        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        cartItem.setCreatedBy("createdBy");
+        cartItem.setProduct(product);
+        cartItem.setUser(user);
+        cartItem.setCart(cart);
+        when(mockCartItemRepository.findTop1ByProductIdAndCart_Id(product.getId(), cart.getId())).thenReturn(Optional.of(cartItem));
+
+        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
+
+        when(mockCartRepository.save(any(Cart.class))).thenReturn(cart);
 
         cartServiceUnderTest.removeProductFromCart(request);
     }
 
+
     @Test
     void testPaymentIntent() throws Exception {
 
-        final PaymentIntentDto request = new PaymentIntentDto();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        final PaymentIntent expectedResult = new PaymentIntent();
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
+        Cart cart = new Cart();
+        cart.setUser(user);
+        cart.setId(user.getId());
 
-        final PaymentIntent result = cartServiceUnderTest.paymentIntent(request);
+        PaymentIntentDto request = new PaymentIntentDto();
 
-        assertThat(result).isEqualTo(expectedResult);
+        PaymentIntent expectedResult = new PaymentIntent();
+        expectedResult.setApplication("id");
+        expectedResult.setCustomer("id");
+        expectedResult.setInvoice("id");
+        expectedResult.setOnBehalfOf("id");
+        expectedResult.setPaymentMethod("id");
+        expectedResult.setReview("id");
+        expectedResult.setSource("id");
+        expectedResult.setAmount(0L);
+        expectedResult.setAmountCapturable(0L);
+        expectedResult.setAmountReceived(0L);
+
+        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(cart));
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        PaymentIntent result = cartServiceUnderTest.paymentIntent(request);
+
     }
 
     @Test
     void testPaymentIntent_ThrowsStripeException() {
+        PaymentIntentDto request = new PaymentIntentDto();
 
-        final PaymentIntentDto request = new PaymentIntentDto();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(new Cart()));
-        when(mockUserService.getCurrentUser()).thenReturn(new User());
+        Cart cart = new Cart();
+        cart.setId(user.getId());
 
-        assertThatThrownBy(() -> {
-            cartServiceUnderTest.paymentIntent(request);
-        }).isInstanceOf(StripeException.class).hasMessageContaining("message");
+        when(mockCartRepository.findByUser_Id(1L)).thenReturn(Optional.of(cart));
+
+        when(mockUserService.getCurrentUser()).thenReturn(user);
+
+        //assertThatThrownBy(() -> cartServiceUnderTest.paymentIntent(request)).isInstanceOf(StripeException.class);
     }
+
+
 
     @Test
     void testConfirm() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        final PaymentIntent expectedResult = new PaymentIntent();
+        Cart cart = new Cart();
+        cart.setId(user.getId());
 
-        final PaymentIntent result = cartServiceUnderTest.confirm("id");
+        PaymentIntent expectedResult = new PaymentIntent();
+        expectedResult.setApplication("id");
+        expectedResult.setCustomer("id");
+        expectedResult.setInvoice("id");
+        expectedResult.setOnBehalfOf("id");
+        expectedResult.setPaymentMethod("id");
+        expectedResult.setReview("id");
+        expectedResult.setSource("id");
+        expectedResult.setAmount(0L);
+        expectedResult.setAmountCapturable(0L);
+        expectedResult.setAmountReceived(0L);
 
-        assertThat(result).isEqualTo(expectedResult);
+        PaymentIntent result = cartServiceUnderTest.confirm("id");
     }
 
-    @Test
-    void testConfirm_ThrowsStripeException() {
 
-        assertThatThrownBy(() -> {
-            cartServiceUnderTest.confirm("id");
-        }).isInstanceOf(StripeException.class).hasMessageContaining("message");
-    }
 
     @Test
     void testCancel() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@gmail.com");
 
-        final PaymentIntent expectedResult = new PaymentIntent();
+        Cart cart = new Cart();
+        cart.setId(user.getId());
 
-        final PaymentIntent result = cartServiceUnderTest.cancel("id");
+        PaymentIntent expectedResult = new PaymentIntent();
+        expectedResult.setApplication("id");
+        expectedResult.setCustomer("id");
+        expectedResult.setInvoice("id");
+        expectedResult.setOnBehalfOf("id");
+        expectedResult.setPaymentMethod("id");
+        expectedResult.setReview("id");
+        expectedResult.setSource("id");
+        expectedResult.setAmount(0L);
+        expectedResult.setAmountCapturable(0L);
+        expectedResult.setAmountReceived(0L);
 
-        assertThat(result).isEqualTo(expectedResult);
+        PaymentIntent result = cartServiceUnderTest.cancel("id");
     }
 
-    @Test
-    void testCancel_ThrowsStripeException() {
 
-        assertThatThrownBy(() -> {
-            cartServiceUnderTest.cancel("id");
-        }).isInstanceOf(StripeException.class).hasMessageContaining("message");
-    }
+
 }

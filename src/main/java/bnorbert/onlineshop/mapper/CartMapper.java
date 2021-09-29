@@ -1,10 +1,11 @@
 package bnorbert.onlineshop.mapper;
 
-import bnorbert.onlineshop.domain.*;
+import bnorbert.onlineshop.domain.Cart;
+import bnorbert.onlineshop.domain.CartItem;
+import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.transfer.cart.AddProductToCartRequest;
 import bnorbert.onlineshop.transfer.cart.CartItemsResponse;
 import bnorbert.onlineshop.transfer.cart.CartResponse;
-import bnorbert.onlineshop.transfer.cart.DiscountResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -26,24 +27,13 @@ public abstract class CartMapper {
     @Mapping(target = "description", source = "product.description")
     @Mapping(target = "imagePath", source = "product.imagePath")
     @Mapping(target = "unitInStock", source = "product.unitInStock")
-    public abstract CartItemsResponse mapToDto(CartItem cartItem);
-
-
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "grandTotal", source = "cart.grandTotal")
-    @Mapping(target = "userId", source = "user.id")
-    @Mapping(target = "userEmail", source = "user.email")
-    public abstract CartResponse mapToDto(Cart cart);
+    public abstract CartItemsResponse mapToCartResponse(CartItem cartItem);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "grandTotal", source = "cart.grandTotal")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userEmail", source = "user.email")
-    @Mapping(target = "discountId", source = "discount.id")
-    @Mapping(target = "createdDate", source = "discount.createdDate")
-    @Mapping(target = "expirationDate", source = "discount.expirationDate")
-    @Mapping(target = "percentOff", source = "discount.percentOff")
-    public abstract DiscountResponse mapToDto2(Cart cart);
+    public abstract CartResponse mapToCartResponse(Cart cart);
 
 
 

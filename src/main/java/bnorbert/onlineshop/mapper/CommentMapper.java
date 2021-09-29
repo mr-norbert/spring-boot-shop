@@ -24,7 +24,7 @@ public abstract class CommentMapper {
     @Mapping(target = "userEmail", source = "user.email")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "reviewId", source = "review.id")
-    public abstract CommentResponse mapToDto(Comment comment);
+    public abstract CommentResponse mapToCommentResponse(Comment comment);
 
     public abstract List<CommentResponse> entitiesToEntityDTOs(List<Comment> comments);
 

@@ -3,6 +3,7 @@ package bnorbert.onlineshop.transfer.search;
 import lombok.Getter;
 
 @Getter
+//Old
 public class SearchFacet {
 
     private String value;

@@ -2,22 +2,21 @@ package bnorbert.onlineshop.transfer.cart;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Getter
 @Setter
-@ToString
+
 public class CartResponse {
-    private long id;
+    private Long id;
     private double grandTotal;
     private Set<CartItemsResponse> cartItems = new HashSet<>();
     private Long userId;
     private String userEmail;
 
-/*
+    /*
     public Double getGrandTotal() {
         double sum = 0D;
         Set<ProductPresentationResponse> products = getProducts();
@@ -32,4 +31,15 @@ public class CartResponse {
     }
 
      */
+
+    @Override
+    public String toString() {
+        return "CartResponse{" +
+                "id=" + id +
+                ", grandTotal=" + grandTotal +
+                ", cartItems=" + cartItems +
+                ", userId=" + userId +
+                ", userEmail='" + userEmail + '\'' +
+                '}';
+    }
 }

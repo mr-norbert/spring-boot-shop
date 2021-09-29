@@ -2,42 +2,46 @@ package bnorbert.onlineshop.domain;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import javax.persistence.*;
-import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Entity
 @Getter
 @Setter
-
 public class PersistentAuditEvent  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String principal;
-    private Instant auditEventDate;
+    private LocalDate localDate;
+    private LocalDateTime auditEventDate;
     private String auditEventType;
+    private String fingerprints;
+    private String ip;
 
     @ElementCollection
     @MapKeyColumn(name = "name")
     @Column(name = "value")
-    @CollectionTable(name = "persistent_audit_event_data", joinColumns=@JoinColumn(name="event_id"))
-    private Map<String, String> data = new HashMap<>();
+    @CollectionTable(name = "persistent_audit_event_metadata", joinColumns = @JoinColumn(name="id"))
+    private Map<String, String> metadata = new HashMap<>();
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)  return true;
-        if (!(o instanceof PersistentAuditEvent)) { return false; }
-        return id != null && id.equals(((PersistentAuditEvent) o).id);
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        PersistentAuditEvent that = (PersistentAuditEvent) o;
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return 31;
+        return 0;
     }
-
-
 }

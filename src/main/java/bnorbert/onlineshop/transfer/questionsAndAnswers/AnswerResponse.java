@@ -2,13 +2,11 @@ package bnorbert.onlineshop.transfer.questionsAndAnswers;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.time.Instant;
 
 @Getter
 @Setter
-@ToString
 public class AnswerResponse {
 
     private Long id;
@@ -17,4 +15,16 @@ public class AnswerResponse {
     private Instant createdDate;
     private Long userId;
     private Long questionId;
+
+    @Override
+    public String toString() {
+        return "AnswerResponse{" +
+                "id=" + id +
+                ", text='" + text + '\'' +
+                ", voteCount=" + voteCount +
+                ", createdDate=" + createdDate +
+                ", userId=" + userId +
+                ", questionId=" + questionId +
+                '}';
+    }
 }

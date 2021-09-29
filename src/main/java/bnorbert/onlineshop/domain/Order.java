@@ -16,7 +16,6 @@ import java.util.Set;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-
 public class Order {
 
     @Id
@@ -29,12 +28,17 @@ public class Order {
     private String shippingMethod;
     private String orderStatus;
     private double grandTotal;
+    private String firstName;
+    private String lastName;
+    private String phoneNumber;
+    private String address;
+    private String address2;
+    private String state;
+    private String city;
+    private String zipCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private ShippingAddress shippingAddress;
 
     @OneToMany(mappedBy="order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CartItem> cartItems = new HashSet<>();
@@ -43,6 +47,5 @@ public class Order {
         cartItems.add(cartItem);
         cartItem.setOrder(this);
     }
-
 
 }

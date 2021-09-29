@@ -3,17 +3,19 @@ package bnorbert.onlineshop.controller;
 import bnorbert.onlineshop.domain.AnswersVoteType;
 import bnorbert.onlineshop.domain.CommentsVoteType;
 import bnorbert.onlineshop.service.VoteService;
-import bnorbert.onlineshop.transfer.vote.VoteAnswersDto;
-import bnorbert.onlineshop.transfer.vote.VoteDto;
+import bnorbert.onlineshop.transfer.vote.CreateVoteRequest;
+import bnorbert.onlineshop.transfer.vote.VoteAnswersRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+@ExtendWith(MockitoExtension.class)
 class VoteControllerTest {
 
     @Mock
@@ -23,25 +25,24 @@ class VoteControllerTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
         voteControllerUnderTest = new VoteController(mockVoteService);
     }
 
     @Test
     void testVoteComments() {
-        final VoteDto request = new VoteDto(CommentsVoteType.HELPFUL, 1L);
+        final CreateVoteRequest request = new CreateVoteRequest(CommentsVoteType.HELPFUL, 1L);
 
         final ResponseEntity<Void> result = voteControllerUnderTest.voteComments(request);
 
-        verify(mockVoteService).voteComments(any(VoteDto.class));
+        verify(mockVoteService).voteComments(any(CreateVoteRequest.class));
     }
 
     @Test
     void testVoteAnswers() {
-        final VoteAnswersDto request = new VoteAnswersDto(AnswersVoteType.UPVOTE, 1L);
+        final VoteAnswersRequest request = new VoteAnswersRequest(AnswersVoteType.UPVOTE, 1L);
 
         final ResponseEntity<Void> result = voteControllerUnderTest.voteAnswers(request);
 
-        verify(mockVoteService).voteAnswers(any(VoteAnswersDto.class));
+        verify(mockVoteService).voteAnswers(any(VoteAnswersRequest.class));
     }
 }

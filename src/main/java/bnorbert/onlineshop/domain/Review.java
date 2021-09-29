@@ -17,6 +17,7 @@ public class Review {
 
     private int rating;
     private String intent;
+    //@ColumnTransformer(read = "AES_DECRYPT(UNHEX(content), 'body')", write = "HEX(AES_ENCRYPT(?, 'body'))")
     private String content;
     private Instant createdDate;
 
@@ -36,8 +37,12 @@ public class Review {
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        int result;
+        result = (int) (id ^ (id >>> 32));
+        result = (int) (rating ^ (rating >>> 32));
+        return result;
     }
+
 
 
 }

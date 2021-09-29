@@ -2,11 +2,10 @@ package bnorbert.onlineshop.transfer.cart;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
+
 public class PaymentIntentDto {
 
     public enum Currency{
@@ -15,5 +14,10 @@ public class PaymentIntentDto {
 
     private Currency currency;
 
-
+    @Override
+    public String toString() {
+        return "PaymentIntentDto{" +
+                "currency=" + currency +
+                '}';
+    }
 }

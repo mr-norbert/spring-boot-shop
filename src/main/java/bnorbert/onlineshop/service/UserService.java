@@ -8,7 +8,6 @@ import bnorbert.onlineshop.exception.UserAlreadyExistException;
 import bnorbert.onlineshop.repository.UserRepository;
 import bnorbert.onlineshop.repository.VerificationTokenRepository;
 import bnorbert.onlineshop.transfer.user.login.AuthResponse;
-import bnorbert.onlineshop.transfer.user.login.LoginRequest;
 import bnorbert.onlineshop.transfer.user.request.ResendTokenRequest;
 import bnorbert.onlineshop.transfer.user.request.ResetPasswordRequest;
 import bnorbert.onlineshop.transfer.user.request.SaveUserRequest;
@@ -31,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserService {
@@ -44,7 +44,8 @@ public class UserService {
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       VerificationTokenRepository verificationTokenRepository, AuthenticationManager authenticationManager, JwtProvider jwtProvider) {
+                       VerificationTokenRepository verificationTokenRepository,
+                       AuthenticationManager authenticationManager, JwtProvider jwtProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.verificationTokenRepository = verificationTokenRepository;
@@ -52,14 +53,16 @@ public class UserService {
         this.jwtProvider = jwtProvider;
     }
 
-    private boolean emailExists(final String email){
+    private boolean emailExists(String email){
         return userRepository.findByEmail(email).isPresent();
     }
 
     public UserResponse createUser(SaveUserRequest request){
         LOGGER.info("Creating user: {}", request);
         if (emailExists(request.getEmail())) {
-            throw new UserAlreadyExistException("That email is taken. Try another."); }
+            throw new UserAlreadyExistException
+                    ("That email is taken. Try another.");
+        }
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -97,7 +100,8 @@ public class UserService {
     public UserResponse resendToken(ResendTokenRequest request) {
         User user = userRepository.
                 findByEmail(request.getEmail()).orElseThrow(() ->
-                new ResourceNotFoundException("User " + request.getEmail() + " not found."));
+                new ResourceNotFoundException
+                        ("User " + request.getEmail() + " not found."));
 
         VerificationToken verificationToken = new VerificationToken(user);
         user.addToken(verificationToken);
@@ -110,13 +114,16 @@ public class UserService {
     @Transactional
     public UserResponse confirmUser(VerifyTokenRequest request) {
         VerificationToken verificationToken = verificationTokenRepository
-                .findByVerificationToken(request.getVerificationToken()).orElseThrow(() ->
-                        new ResourceNotFoundException("Token " + request.getVerificationToken() + " not found."));
+                .findByVerificationToken(request.getVerificationToken())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException
+                                ("Token " + request.getVerificationToken() + " not found."));
         User user = verificationToken.getUser();
         user.setEnabled(true);
 
         if (currentTime().isAfter(verificationToken.getExpirationDate())){
-            throw new ResourceNotFoundException("Token " + request.getVerificationToken() + "has expired");
+            throw new ResourceNotFoundException
+                    ("Token " + request.getVerificationToken() + "has expired");
         }
 
         User savedUser = userRepository.save(user);
@@ -134,6 +141,7 @@ public class UserService {
         UserResponse userResponse = new UserResponse();
         userResponse.setId(user.getId());
         userResponse.setEmail(user.getEmail());
+        userResponse.setPassword("41FEB346578303F");
 
         for (Role role : user.getRoles()) {
             RoleResponse roleResponse = new RoleResponse();
@@ -155,14 +163,18 @@ public class UserService {
     public UserResponse resetPassword(ResetPasswordRequest request) {
         LOGGER.info("Changing password for user {}", request);
         VerificationToken verificationToken = verificationTokenRepository
-                .findByVerificationToken(request.getVerificationToken()).orElseThrow(() ->
-                        new ResourceNotFoundException("Token " + request.getVerificationToken() + " not found."));
+                .findByVerificationToken
+                        (request.getVerificationToken()).orElseThrow(() ->
+                        new ResourceNotFoundException
+                                ("Token " + request.getVerificationToken() + " not found."));
+
         User user = verificationToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPasswordConfirm(passwordEncoder.encode(request.getPasswordConfirm()));
 
         if (currentTime().isAfter(verificationToken.getExpirationDate())){
-            throw new ResourceNotFoundException("Token " + request.getVerificationToken() + "has expired");
+            throw new ResourceNotFoundException
+                    ("Token " + request.getVerificationToken() + "has expired");
         }
 
         User savedUser = userRepository.save(user);
@@ -175,36 +187,58 @@ public class UserService {
     }
 
 
-    public AuthResponse login(LoginRequest request) {
-        Authentication authenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authenticate);
-        String authToken = jwtProvider.generateToken(authenticate);
-        return new AuthResponse(authToken, request.getEmail());
+    public AuthResponse login(String email, String password) {
+        long endTime = System.nanoTime() + TimeUnit.NANOSECONDS.convert(10L, TimeUnit.SECONDS);
+        while (System.nanoTime() < endTime) {
+
+            Authentication authenticate = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken
+                            (email, password));
+
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authenticate);
+            String authToken = jwtProvider
+                    .generateToken(authenticate);
+
+            return new AuthResponse(authToken, email);
+        }
+        String front_token = "3h*354-75c5#!-49b2##-a890Oa-2eb344";
+        String message = Long.toString(endTime);
+
+        return new AuthResponse(front_token, message);
     }
 
 
     @Transactional
     public User getCurrentUser() {
         User principal = (User) SecurityContextHolder.
-                getContext().getAuthentication().getPrincipal();
+                getContext()
+                .getAuthentication()
+                .getPrincipal();
         return userRepository.findByEmail(principal.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User email not found - " + principal.getEmail()));
+                .orElseThrow(() -> new ResourceNotFoundException
+                        ("User email not found - " + principal.getEmail()));
     }
 
 
     @Scheduled(cron = "0 0 0 * * ?")//Every day at midnight - 12am
     public void removeNotActivatedUsers() {
         userRepository
-                .findAllByEnabledIsFalseAndCreatedDateBefore(Instant.now().minus(5, ChronoUnit.DAYS))
+                .findAllByEnabledIsFalseAndCreatedDateBefore
+                        (Instant.now().minus(5, ChronoUnit.DAYS))
                 .forEach(userRepository::delete);
         LOGGER.info("Schedule: Deleting not activated users");
     }
 
 
     public boolean isLoggedIn() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        return !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.isAuthenticated();
     }
 
     private LocalDateTime currentTime() { return LocalDateTime.now(); }

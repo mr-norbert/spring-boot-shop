@@ -15,14 +15,10 @@ public class Cart {
     @Id
     private Long id;
     private double grandTotal;
-    private double savedAmount;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
     private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Discount discount;
 
     @OneToMany(mappedBy="cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CartItem> cartItems = new HashSet<>();
@@ -35,11 +31,23 @@ public class Cart {
     public double getSum() {
         double sum = 0D;
         Set<CartItem> cartItemSet = getCartItems();
-        for (CartItem cartItem : cartItemSet){
-            sum += cartItem.getSubTotal();
-        }
+
+       // for (CartItem cartItem : cartItemSet) {
+            //     sum += cartItem.getSubTotal();
+            // }
+
+        sum = cartItemSet.stream()
+                .mapToDouble(CartItem::getSubTotal)
+                .sum();
+
         return sum;
+
+        //Set<Double> numbers = cartItemList.stream().map(CartItem::getSubTotal).collect(Collectors.toSet());
+        //return sum = numbers.stream().reduce(0.0, Double::sum);
+
     }
+
+
 
     public Integer getSumForStripe() {
         int sum = 0;
@@ -50,7 +58,7 @@ public class Cart {
         return sum;
     }
 
-
+/*
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,4 +71,7 @@ public class Cart {
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
     }
+
+ */
+
 }

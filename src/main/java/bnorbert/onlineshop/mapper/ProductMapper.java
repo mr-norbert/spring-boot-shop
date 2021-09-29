@@ -1,29 +1,33 @@
 package bnorbert.onlineshop.mapper;
 
+import bnorbert.onlineshop.domain.Image;
 import bnorbert.onlineshop.domain.Product;
-import bnorbert.onlineshop.transfer.product.ProductDto;
-import bnorbert.onlineshop.transfer.product.ProductResponse;
-import bnorbert.onlineshop.transfer.product.UpdateResponse;
-import org.mapstruct.*;
+import bnorbert.onlineshop.transfer.product.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public abstract class ProductMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "name", source = "productDto.name")
-    @Mapping(target = "price", source = "productDto.price")
-    @Mapping(target = "description", source = "productDto.description")
-    @Mapping(target = "imagePath", source = "productDto.imagePath")
-    @Mapping(target = "unitInStock", source = "productDto.unitInStock")
-    @Mapping(target = "isAvailable", source = "productDto.isAvailable")
+    @Mapping(target = "name", source = "createProductRequest.name")
+    @Mapping(target = "price", source = "createProductRequest.price")
+    @Mapping(target = "description", source = "createProductRequest.description")
+    @Mapping(target = "imagePath", source = "createProductRequest.imagePath")
+    @Mapping(target = "unitInStock", source = "createProductRequest.unitInStock")
+    @Mapping(target = "isAvailable", source = "createProductRequest.isAvailable")
     @Mapping(target = "createdDate", expression = "java(java.time.Instant.now())")
-    @Mapping(target = "viewCount", source = "productDto.viewCount", defaultValue = "0")
-    @Mapping(target = "color", source = "productDto.color")
-    @Mapping(target = "categoryName", source = "productDto.categoryName")
-    @Mapping(target = "brandName", source = "productDto.brandName")
-    public abstract Product map(ProductDto productDto);
+    @Mapping(target = "viewCount", source = "createProductRequest.viewCount", defaultValue = "0")
+    @Mapping(target = "color", source = "createProductRequest.color")
+    @Mapping(target = "categoryName", source = "createProductRequest.categoryName")
+    @Mapping(target = "brandName", source = "createProductRequest.brandName")
+    @Mapping(target = "specification", source = "createProductRequest.specification")
+    @Mapping(target = "secondSpec", source = "createProductRequest.secondSpec")
+    public abstract Product map(CreateProductRequest createProductRequest);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "product.name")
@@ -34,7 +38,7 @@ public abstract class ProductMapper {
     @Mapping(target = "createdDate", source = "product.createdDate")
     @Mapping(target = "categoryName", source = "product.categoryName")
     @Mapping(target = "brandName", source = "product.brandName")
-    public abstract ProductResponse mapToDto(Product product);
+    public abstract ProductResponse mapToProductResponse(Product product);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "product.name")
@@ -45,8 +49,9 @@ public abstract class ProductMapper {
     @Mapping(target = "createdDate", source = "product.createdDate")
     @Mapping(target = "lastModifiedBy", source = "product.lastModifiedBy")
     @Mapping(target = "lastModifiedDate", source = "product.lastModifiedDate")
-    public abstract UpdateResponse mapToDto2(Product product);
+    public abstract UpdateResponse mapToUpdateResponse(Product product);
 
     public abstract List<ProductResponse> entitiesToEntityDTOs(List<Product> products);
 
+    public abstract LinkedHashSet<ProductResponse> entitiesToDTOs(Set<Product> products);
 }

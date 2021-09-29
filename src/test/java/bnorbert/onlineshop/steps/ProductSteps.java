@@ -1,7 +1,8 @@
 package bnorbert.onlineshop.steps;
 
 import bnorbert.onlineshop.service.ProductService;
-import bnorbert.onlineshop.transfer.product.ProductDto;
+import bnorbert.onlineshop.transfer.product.CreateProductRequest;
+import bnorbert.onlineshop.transfer.product.ProductResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,26 +14,34 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Component
 public class ProductSteps {
 
+
     @Autowired
     private ProductService productService;
 
-    public void createProduct() {
+    public ProductResponse createProduct() {
 
-        ProductDto request = new ProductDto();
-        request.setName("product-III");
+        CreateProductRequest request = new CreateProductRequest();
+        request.setName("product");
+        request.setBrandName("brand");
+        request.setCategoryName("category");
+        request.setColor("color");
+        request.setSecondSpec(4);
+        request.setSpecification(5);
         request.setDescription("description");
         request.setPrice(200);
         request.setUnitInStock(100);
+        request.setViewCount(0);
         request.setCreatedDate(Instant.now());
 
-        productService.save(request);
+        ProductResponse product = productService.createProduct(request);
 
-        assertThat(request, notNullValue());
-        assertThat(request.getName(), is(request.getName()));
-        assertThat(request.getDescription(), is(request.getDescription()));
-        assertThat(request.getPrice(), is(request.getPrice()));
-        assertThat(request.getUnitInStock(), is(request.getUnitInStock()));
-        assertThat(request.getCreatedDate(), is(request.getCreatedDate()));
+        assertThat(product, notNullValue());
+        assertThat(product.getName(), is(request.getName()));
+        assertThat(product.getDescription(), is(request.getDescription()));
+        assertThat(product.getPrice(), is(request.getPrice()));
+        assertThat(product.getUnitInStock(), is(request.getUnitInStock()));
 
+        return product;
     }
+
 }

@@ -2,14 +2,12 @@ package bnorbert.onlineshop.domain;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import javax.persistence.*;
 import java.time.Instant;
 
 @Getter
 @Setter
-@ToString
 @Entity
 public class Question {
 
@@ -21,6 +19,7 @@ public class Question {
     private Instant createdDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    //@ToString.Exclude
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)

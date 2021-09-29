@@ -11,7 +11,7 @@ import java.util.List;
 public abstract class ItemMapper {
 
     @Mapping(target = "id", source = "id")
-    public abstract AddToCartResponse mapToDto(Pantry pantries);
+    public abstract AddToCartResponse mapToCartResponse(Pantry pantries);
 
     public abstract List<AddToCartResponse> entitiesToEntityDTOs(List<Pantry> pantries);
 }

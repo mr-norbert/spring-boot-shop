@@ -1,7 +1,6 @@
 package bnorbert.onlineshop.transfer.cart;
 
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
-import lombok.ToString;
 
 import javax.validation.constraints.NotNull;
 

@@ -31,6 +31,7 @@ public class CartItem {
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id")
     private Cart cart;
 
     @ManyToOne(fetch = FetchType.LAZY)

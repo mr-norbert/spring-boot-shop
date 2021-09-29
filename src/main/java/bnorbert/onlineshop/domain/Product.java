@@ -1,13 +1,13 @@
 package bnorbert.onlineshop.domain;
 
 import lombok.*;
-
-import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
-import org.apache.lucene.analysis.ngram.EdgeNGramFilterFactory;
-import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
-import org.hibernate.search.annotations.*;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Parameter;
+import org.hibernate.search.engine.backend.types.Aggregable;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.engine.backend.types.Searchable;
+import org.hibernate.search.engine.backend.types.Sortable;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -15,24 +15,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
-@Indexed
+@org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-
-@AnalyzerDef(name = "textanalyzer",
-        tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),
-        filters = {
-                @TokenFilterDef(factory = LowerCaseFilterFactory.class),
-                @TokenFilterDef(factory = EdgeNGramFilterFactory.class,
-                        params = {
-                                @Parameter(name = "minGramSize", value = "1"),
-                                @Parameter(name = "maxGramSize", value = "20")})
-        })
 
 @EntityListeners(AuditingEntityListener.class)
 
@@ -40,40 +32,41 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Field(name = "id_sort", index = Index.NO)
-    @SortableField(forField = "id_sort")
+    @GenericField(name = "id", sortable = Sortable.YES, projectable = Projectable.YES)
     private Long id;
 
-    @Field(analyzer = @Analyzer(definition = "textanalyzer"))
+    @FullTextField(name = "name", analyzer = "custom", projectable = Projectable.YES, searchable = Searchable.YES)
     private String name;
 
-    @Field(analyze = Analyze.NO)
-    @Facet(name = "price")
+    @GenericField(name = "price", sortable = Sortable.YES, projectable = Projectable.YES,
+            searchable = Searchable.YES, aggregable = Aggregable.YES)
     private double price;
 
+    //@KeywordField(name = "description", projectable = Projectable.YES)
     private String description;
 
-    @Field(analyze = Analyze.NO)
-    @Facet(name = "color")
+    @KeywordField(name = "color", aggregable = Aggregable.YES)
     private String color;
 
     private String imagePath;
 
+    //@GenericField(name = "unitInStock", projectable = Projectable.YES)
     private int unitInStock;
 
-    @Field(analyze = Analyze.NO)
-    @Facet(name = "categoryName")
+    @KeywordField(name = "categoryName", projectable = Projectable.YES, aggregable = Aggregable.YES)
     private String categoryName;
 
-    @Field(analyze = Analyze.NO)
-    @Facet(name = "brandName")
+    @KeywordField(name = "brandName", projectable = Projectable.YES, aggregable = Aggregable.YES)
     private String brandName;
 
-    @Field(name = "view_count_sort", index = Index.NO)
-    @SortableField(forField = "view_count_sort")
+    @GenericField(name = "view_count_sort", sortable = Sortable.YES)
     private Integer viewCount = 0;
 
-    @Field
+    private int specification;
+
+    private int secondSpec;
+
+    @GenericField
     private Boolean isAvailable;
 
     private Instant createdDate;
@@ -92,22 +85,27 @@ public class Product {
 
     //@ManyToOne(fetch = FetchType.LAZY)
     //@IndexedEmbedded
-    //private Category category;
+    //private CategoryEnum category;
 
-//@Override
-    //public boolean equals(Object o) {
-    //    if (this == o) return true;
-    //    if (o == null || getClass() != o.getClass()) return false;
-    //    Product product = (Product) o;
-    //    if (!id.equals(product.id)) return false;
-    //    return (name != null ? !name.equals(product.name) : product.name != null);
-    //}
-//
-    //@Override
-    //public int hashCode() {
-    //    int result;
-    //    result = (int) (id ^ (id >>> 32));
-    //    result = 31 * result + (name != null ? name.hashCode() : 0);
-    //    return result;
-    //}
+
+    @ManyToMany(mappedBy = "products")
+    private Set<Pantry> pantries = new HashSet<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        if (!id.equals(product.id)) return false;
+        return (name != null ? !name.equals(product.name) : product.name != null);
+    }
+
+
+    @Override
+    public int hashCode() {
+        int result;
+        result = (int) (id ^ (id >>> 32));
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
+    }
 }

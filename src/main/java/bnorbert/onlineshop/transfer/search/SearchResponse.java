@@ -1,23 +1,25 @@
 package bnorbert.onlineshop.transfer.search;
 
 import bnorbert.onlineshop.transfer.product.ProductResponse;
+import org.hibernate.search.util.common.data.Range;
 
 import java.util.List;
+import java.util.Map;
 
 public class SearchResponse {
 
-    public final List<SearchFacet> categoryFacet;
-    public final List<SearchFacet> brandFacet;
-    public final List<SearchFacet> colorFacet;
-    public final List<SearchFacet> priceFacet;
-    public final List<ProductResponse> products;
+   public final Map<Range<Double>, Long> countByPriceRange;
+   public final Map<String, Long> countsByColor;
+   public final Map<String, Long> countsByCategory;
+   public final Map<String, Long> countsByBrand;
+   public final List<ProductResponse> productResponses;
 
-    public SearchResponse(List<SearchFacet> categoryFacet, List<SearchFacet> brandFacet, List<SearchFacet> colorFacet,
-                          List<SearchFacet> priceFacet, List<ProductResponse> products) {
-        this.categoryFacet = categoryFacet;
-        this.brandFacet = brandFacet;
-        this.colorFacet = colorFacet;
-        this.priceFacet = priceFacet;
-        this.products = products;
-    }
+   public SearchResponse(Map<Range<Double>, Long> countByPriceRange, Map<String, Long> countsByColor, Map<String, Long> countsByCategory,
+                         Map<String, Long> countsByBrand, List<ProductResponse> productResponses) {
+      this.countByPriceRange = countByPriceRange;
+      this.countsByColor = countsByColor;
+      this.countsByCategory = countsByCategory;
+      this.countsByBrand = countsByBrand;
+      this.productResponses = productResponses;
+   }
 }

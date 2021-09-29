@@ -1,10 +1,10 @@
 package bnorbert.onlineshop.transfer.search;
 
-import lombok.Getter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
-@Getter
-@ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class SearchRequest {
 
     private String categoryName;
@@ -15,38 +15,75 @@ public class SearchRequest {
     private Double priceMax;
     private Integer page;
 
-    public SearchRequest(String categoryName, String brandName, String color, String searchWord, Double price, Double priceMax, Integer page) {
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public String getBrandName() {
+        return brandName;
+    }
+
+    public void setBrandName(String brandName) {
         this.brandName = brandName;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
         this.color = color;
+    }
+
+    public String getSearchWord() {
+        return searchWord;
+    }
+
+    public void setSearchWord(String searchWord) {
         this.searchWord = searchWord;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Double getPriceMax() {
+        if (priceMax < price){
+            throw new IllegalArgumentException();
+        }else return priceMax;
+    }
+
+    public void setPriceMax(Double priceMax) {
         this.priceMax = priceMax;
+    }
+
+    public Integer getPage() {
+        return page;
+    }
+
+    public void setPage(Integer page) {
         this.page = page;
     }
 
-    public static SearchRequest searchAll(){
-        return new SearchRequest(null, null, null, null, null, null, null);
-    }
 
-    public SearchRequest searchBrand(String brandName) {
-        return new SearchRequest(brandName, this.categoryName, this.color, this.searchWord, this.price, this.priceMax, this.page);
+    @Override
+    public String toString() {
+        return "SearchRequest{" +
+                "categoryName='" + categoryName + '\'' +
+                ", brandName='" + brandName + '\'' +
+                ", color='" + color + '\'' +
+                ", searchWord='" + searchWord + '\'' +
+                ", price=" + price +
+                ", priceMax=" + priceMax +
+                ", page=" + page +
+                '}';
     }
-
-    public SearchRequest searchCategory(String categoryName) {
-        return new SearchRequest(categoryName, this.brandName, this.color, this.searchWord, this.price, this.priceMax,  this.page);
-    }
-
-    public SearchRequest searchColor(String color) {
-        return new SearchRequest(color, this.categoryName, this.brandName, this.searchWord, this.price, this.priceMax,  this.page);
-    }
-
-    public SearchRequest searchWord(String searchWord) {
-        return new SearchRequest(searchWord, this.categoryName, this.brandName, this.color, this.price,  this.priceMax, this.page);
-    }
-
-    public SearchRequest searchPrice(Double price) {
-        return new SearchRequest(this.searchWord, this.categoryName, this.brandName, this.color, price, this.priceMax, this.page);
-    }
-
 }

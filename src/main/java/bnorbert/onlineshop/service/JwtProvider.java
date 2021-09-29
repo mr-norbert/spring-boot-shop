@@ -39,7 +39,7 @@ public class JwtProvider {
         try {
             return (PrivateKey) keyStore.getKey("springshop", "123456789jks".toCharArray());
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
-            throw new ResourceNotFoundException("Exception occured while retrieving private key from keystore");
+            throw new ResourceNotFoundException("Exception occurred while retrieving private key from keystore");
         }
     }
 
@@ -47,7 +47,7 @@ public class JwtProvider {
         try {
             return keyStore.getCertificate("springshop").getPublicKey();
         } catch (KeyStoreException e) {
-            throw new ResourceNotFoundException("Exception occured while retrieving public key from keystore");
+            throw new ResourceNotFoundException("Exception occurred while retrieving public key from keystore");
         }
     }
 

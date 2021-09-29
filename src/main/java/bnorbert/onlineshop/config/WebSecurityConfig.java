@@ -12,6 +12,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
+
+import java.util.Arrays;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -26,7 +30,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+        //http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        )
+        //http.csrf().disable()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET,
                         "/", "/v2/api-docs", "/webjars/**", "/swagger-resources/**",
@@ -35,17 +43,27 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/users/login/**").permitAll()
                 .antMatchers(HttpMethod.POST,"/users/confirmUser").permitAll()
                 .antMatchers(HttpMethod.POST,"/users/resendToken").permitAll()
-
-
+                .antMatchers(HttpMethod.PUT,"/roles/addRole").hasRole("ADMIN")
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
 
     }
 
     @Bean
     protected AuthenticationManager getAuthenticationManager() throws Exception {
         return super.authenticationManagerBean();
+    }
+
+    //@Bean
+    //public HttpTraceRepository httpTraceRepository() {
+    //    return new InMemoryHttpTraceRepository();
+    //}
+
+    @Bean
+    public StrictHttpFirewall httpFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowedHttpMethods(Arrays.asList("GET", "POST", "PUT"));
+        return firewall;
     }
 
     @Bean

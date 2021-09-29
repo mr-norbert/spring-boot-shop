@@ -2,11 +2,10 @@ package bnorbert.onlineshop.transfer.address;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
+
 public class AddressResponse {
 
     private String firstName;
@@ -18,4 +17,19 @@ public class AddressResponse {
     private String city;
     private String zipCode;
     private Long userId;
+
+    @Override
+    public String toString() {
+        return "AddressResponse{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", address='" + address + '\'' +
+                ", address2='" + address2 + '\'' +
+                ", state='" + state + '\'' +
+                ", city='" + city + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                ", userId=" + userId +
+                '}';
+    }
 }

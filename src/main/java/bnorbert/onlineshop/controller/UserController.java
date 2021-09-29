@@ -3,7 +3,6 @@ package bnorbert.onlineshop.controller;
 import bnorbert.onlineshop.domain.User;
 import bnorbert.onlineshop.service.UserService;
 import bnorbert.onlineshop.transfer.user.login.AuthResponse;
-import bnorbert.onlineshop.transfer.user.login.LoginRequest;
 import bnorbert.onlineshop.transfer.user.request.ResendTokenRequest;
 import bnorbert.onlineshop.transfer.user.request.ResetPasswordRequest;
 import bnorbert.onlineshop.transfer.user.request.SaveUserRequest;
@@ -15,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @CrossOrigin
 @RestController
@@ -75,10 +75,17 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PostMapping("/login")
-    public  ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
-        AuthResponse user = userService.login(loginRequest);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+    //@PostMapping("/login")
+    //public  ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
+    //    AuthResponse user = userService.login(loginRequest);
+    //    return new ResponseEntity<>(user, HttpStatus.OK);
+    //}
+
+    @GetMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestParam(value = "email")@NotNull String email,
+                                               @RequestParam(value = "password")@NotNull String password) {
+        AuthResponse authResponse = userService.login(email, password);
+        return new ResponseEntity<>(authResponse, HttpStatus.OK);
     }
 
 }

@@ -2,11 +2,10 @@ package bnorbert.onlineshop.transfer.cart;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
+
 public class ProductPresentationResponse {
     private long id;
     private String name;
@@ -14,4 +13,16 @@ public class ProductPresentationResponse {
     private double price;
     private String description;
     private String imagePath;
+
+    @Override
+    public String toString() {
+        return "ProductPresentationResponse{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", quantity=" + quantity +
+                ", price=" + price +
+                ", description='" + description + '\'' +
+                ", imagePath='" + imagePath + '\'' +
+                '}';
+    }
 }

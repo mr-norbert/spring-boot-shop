@@ -2,14 +2,13 @@ package bnorbert.onlineshop.domain;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import javax.persistence.*;
 import java.time.Instant;
 
 @Getter
 @Setter
-@ToString
+
 @Entity
 public class Answer {
 
