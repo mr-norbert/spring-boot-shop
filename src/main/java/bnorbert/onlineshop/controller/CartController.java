@@ -33,6 +33,19 @@ public class CartController {
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
+    @GetMapping("/getDetails")
+    public ResponseEntity<Void> testGetLineItems() {
+        cartService.testGetCartItems();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/addToCartChristmasEdition")
+    public ResponseEntity<Page<AddToCartResponse>> add(
+            @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
+        Page<AddToCartResponse> carts = cartService.addToCartChristmasEdition(request, pageable);
+        return new ResponseEntity<>(carts, HttpStatus.OK);
+    }
+
     @GetMapping("/getCart")
     public ResponseEntity<CartResponse> getCart() {
         CartResponse cart = cartService.getCart();

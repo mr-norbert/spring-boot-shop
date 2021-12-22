@@ -3,6 +3,8 @@ package bnorbert.onlineshop.transfer.product;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -17,7 +19,7 @@ public class ProductResponse {
     private String description;
     private String imagePath;
     private int unitInStock;
-    private Instant createdDate;
+    private LocalDateTime createdDate;
     private String brandName;
     private String categoryName;
 

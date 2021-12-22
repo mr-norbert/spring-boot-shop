@@ -44,8 +44,7 @@ public class RoleService {
     public void addRoleToUser(AddToUserRequest request){
         log.info("Adding role to user: {}", request);
         Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Role" + request.getRoleId() + "not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role" + request.getRoleId() + "not found"));
         User user = userService.getUser(request.getUserId());
         user.addToUser(role);
 
@@ -55,8 +54,7 @@ public class RoleService {
     public void addPermissionToRole(AddToRoleRequest request){
         log.info("Adding permission to role: {}", request);
         Permission permission = permissionRepository.findById(request.getPermissionId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Permission" + request.getPermissionId() + "not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Permission" + request.getPermissionId() + "not found"));
         Role role = getRole(request.getRoleId());
         role.addToRole(permission);
 
@@ -66,9 +64,8 @@ public class RoleService {
 
     public Role getRole(long id){
         log.info("Retrieving role {}", id);
-        return roleRepository.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException
-                        ("Role" + id + "not found"));
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Role" + id + "not found"));
     }
 
 }

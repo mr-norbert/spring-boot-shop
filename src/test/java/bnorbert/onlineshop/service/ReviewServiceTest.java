@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +62,7 @@ class ReviewServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.now());
+        //product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
 
         User user = new User();
@@ -104,7 +103,7 @@ class ReviewServiceTest {
         productResponse.setDescription("description");
         productResponse.setImagePath("imagePath");
         productResponse.setUnitInStock(90);
-        productResponse.setCreatedDate(Instant.now());
+        //productResponse.setCreatedDate(LocalDate.now());
 
         //Set<ProductResponse> expectedResult = new HashSet<>(Collections.singletonList(productResponse));
 
@@ -119,7 +118,7 @@ class ReviewServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.now());
+        //product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
 
         Review review = new Review();
@@ -193,7 +192,7 @@ class ReviewServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.now());
+       // product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
 

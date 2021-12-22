@@ -1,13 +1,15 @@
 package bnorbert.onlineshop.domain;
 
+import bnorbert.onlineshop.binder.ProductBundleForSaleTypeBinder;
 import lombok.*;
 import org.hibernate.search.engine.backend.types.Aggregable;
 import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.engine.backend.types.Searchable;
 import org.hibernate.search.engine.backend.types.Sortable;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.TypeBinderRef;
+import org.hibernate.search.mapper.pojo.extractor.builtin.BuiltinContainerExtractors;
+import org.hibernate.search.mapper.pojo.extractor.mapping.annotation.ContainerExtraction;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -15,7 +17,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -27,7 +32,7 @@ import java.util.Set;
 @NoArgsConstructor
 
 @EntityListeners(AuditingEntityListener.class)
-
+@TypeBinding(binder = @TypeBinderRef(type = ProductBundleForSaleTypeBinder.class))
 public class Product {
 
     @Id
@@ -60,7 +65,7 @@ public class Product {
     private String brandName;
 
     @GenericField(name = "view_count_sort", sortable = Sortable.YES)
-    private Integer viewCount = 0;
+    private Integer hits = 0;
 
     private int specification;
 
@@ -69,7 +74,9 @@ public class Product {
     @GenericField
     private Boolean isAvailable;
 
-    private Instant createdDate;
+    @GenericField
+    private LocalDateTime createdDate;
+
     @CreatedBy
     private String createdBy;
 
@@ -78,6 +85,20 @@ public class Product {
 
     @LastModifiedDate
     private Instant lastModifiedDate = Instant.now();
+
+    @ElementCollection
+    @JoinTable(
+            name = "bundlebyprice",
+            joinColumns = @JoinColumn(name = "product_id")
+    )
+    @MapKeyJoinColumn(name = "bundle_id")
+    @Column(name = "price")
+    @OrderBy("bundle_id asc")
+    @AssociationInverseSide(
+            extraction = @ContainerExtraction(BuiltinContainerExtractors.MAP_KEY),
+            inversePath = @ObjectPath( @PropertyValue( propertyName = "product" ) )
+    )
+    private Map<Bundle, Double> priceByBundle = new LinkedHashMap<>();
 
     //@ManyToOne(fetch = FetchType.LAZY)
     //@IndexedEmbedded
@@ -90,6 +111,7 @@ public class Product {
 
     @ManyToMany(mappedBy = "products")
     private Set<Pantry> pantries = new HashSet<>();
+
 
     @Override
     public boolean equals(Object o) {

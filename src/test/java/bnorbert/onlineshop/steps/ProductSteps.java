@@ -6,7 +6,6 @@ import bnorbert.onlineshop.transfer.product.ProductResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,8 +29,8 @@ public class ProductSteps {
         request.setDescription("description");
         request.setPrice(200);
         request.setUnitInStock(100);
-        request.setViewCount(0);
-        request.setCreatedDate(Instant.now());
+        request.setHits(1);
+        //request.setCreatedDate(LocalDate.now());
 
         ProductResponse product = productService.createProduct(request);
 

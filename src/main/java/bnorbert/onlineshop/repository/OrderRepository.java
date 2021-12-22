@@ -1,12 +1,12 @@
 package bnorbert.onlineshop.repository;
 
-import bnorbert.onlineshop.domain.*;
+import bnorbert.onlineshop.domain.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
-import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    List<Order> findOrdersByCreatedDateBefore(Instant createdDate);
+    @org.springframework.data.jpa.repository.Query(value = "SELECT created_date FROM customer_orders WHERE id = ?1", nativeQuery = true)
+    Instant getCreatedDate(long id);
 }

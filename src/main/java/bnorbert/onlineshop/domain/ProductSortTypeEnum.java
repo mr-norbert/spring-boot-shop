@@ -6,8 +6,9 @@ public enum ProductSortTypeEnum {
     PRICE_DESC,
     ID_ASC,
     ID_DESC,
-    VIEW_COUNT_DESC,
-    VIEW_COUNT_ASC;
+    CUSTOM,
+    PAGE,
+    _TEST;
 
     ProductSortTypeEnum() {
     }

@@ -1,14 +1,16 @@
 package bnorbert.onlineshop.controller;
 
-import bnorbert.onlineshop.domain.ProductSortTypeEnum;
+import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.CreateProductRequest;
 import bnorbert.onlineshop.transfer.product.ImageResponse;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
+import bnorbert.onlineshop.transfer.search.HibernateSearchResponse;
 import bnorbert.onlineshop.transfer.search.SearchRequest;
 import bnorbert.onlineshop.transfer.search.SearchResponse;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,9 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,6 +43,10 @@ public class ProductController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @PutMapping("/binder/{productId}")
+    public ProductResponse bindThem(@PathVariable Long productId) {
+        return productService.bindThem(productId);
+    }
 
     @GetMapping("/product/{id}")
     public ProductResponse getProduct(@PathVariable Long id) {
@@ -65,33 +69,13 @@ public class ProductController {
     }
 
 
-    @PostMapping("/uploadFile")
-    public ResponseEntity<byte[]> uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
-        productService.storeFile(file);
-        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(file.getBytes());
-    }
-
-    @PostMapping("/upload-file")
+    @PostMapping("/upload")
     @ResponseBody
-    public ImageResponse storeFile(@RequestParam("file") MultipartFile file) throws IOException {
-        productService.storeFile(file);
-
+    public ImageResponse createImage(@RequestParam("file") MultipartFile file,
+                                     @RequestParam("productId") long productId
+    ) throws IOException {
+        productService.createImage(file, productId);
         return new ImageResponse(file.getOriginalFilename(), file.getContentType());
-    }
-
-    @PostMapping("/uploadMultipleFiles")
-    @ResponseBody
-    public List<ImageResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
-        return Arrays.stream(files)
-                .map(file -> {
-                    try {
-                        storeFile(file);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return new ImageResponse(file.getOriginalFilename(), file.getContentType());
-
-                }).collect(Collectors.toList());
     }
 
 
@@ -132,34 +116,59 @@ public class ProductController {
     }
 
 
-    @GetMapping("/findMatch")
-    public SearchResponse findMatches(@RequestParam(value = "specification") int specification,
-        @RequestParam(value = "spec") int secondSpec,
-        @RequestParam(value = "name") Optional<String> name,
-        @RequestParam(value = "category") String categoryName,
-        @RequestParam(name = "sort") ProductSortTypeEnum sortType){
-        return productService.findMatches(specification, secondSpec, name.orElse(""), categoryName, sortType);
+    @GetMapping("/suggestions")
+    public String getSuggestions(@RequestParam(value = "query") String query) {
+        return productService.getSuggestions(query);
+    }
+
+    @GetMapping("/findMatches")
+    public SearchResponse findMatches(
+            @RequestParam(name = "spec") MatchesEnum e1,
+            @RequestParam(name = "_spec") MatchesEnum2 e2,
+            @RequestParam(value = "name") Optional<String> name,
+            @RequestParam(value = "category") String categoryName,
+            @RequestParam(name = "sort") ProductSortTypeEnum sortType,
+            @RequestParam(name = "pageNumber", required = false, defaultValue = "0") int pageNumber
+    ){
+        return productService.findMatches(e1, e2, name.orElse(""), categoryName, sortType, pageNumber);
     }
 
     private static final int PAGE_DEFAULT = 0;
-    @PostMapping("/search")
-    public SearchResponse search(@RequestParam(value = "category", required = false) String categoryName,
-                                  @RequestParam(value = "brand", required = false) String brandName,
-                                  @RequestParam(value = "color", required = false) String color,
-                                  @RequestParam(value = "searchWord", required = false) String searchWord,
-                                  @RequestParam(value = "price", required = false) Double price,
-                                  @RequestParam(value = "priceMax", required = false) Double priceMax,
-                                  @RequestParam(name = "page") @NotNull Optional<Integer> page,
-                                  @RequestParam(name = "sort") ProductSortTypeEnum sortType
+    @PostMapping("/searchBox")
+    public HibernateSearchResponse getSearchBox(@RequestParam(value = "category", required = false) String categoryName,
+                                          @RequestParam(value = "brand", required = false) String brandName,
+                                          @RequestParam(value = "color", required = false) String color,
+                                          @RequestParam(value = "query", required = false) String query,
+                                          @RequestParam(value = "price", required = false) Double price,
+                                          @RequestParam(value = "priceMax", required = false) Double priceMax,
+                                          @RequestParam(name = "sort") ProductSortTypeEnum sortType,
+                                          @RequestParam(name = "pageNumber"//, required = false, defaultValue = "0"
+                                          ) Optional<Integer> pageNumber, Pageable pageable
     ) {
-        return productService.search(new SearchRequest(categoryName, brandName, color, searchWord, price, priceMax,
-                page.orElse(PAGE_DEFAULT)), sortType);
+        return productService.getSearchBox(new SearchRequest(categoryName, brandName, color, query, price, priceMax),
+                sortType, pageNumber.orElse(PAGE_DEFAULT), pageable);
     }
 
+    @GetMapping("/searchBar")
+    public HibernateSearchResponse getSearchBar(@RequestParam(value = "query") String query,
+                                               @RequestParam(name = "sort") ProductSortTypeEnum sortType,
+                                               @RequestParam(name = "pageNumber", required = false, defaultValue = "0") int pageNumber,
+                                               Pageable pageable
+    ) {
+        return productService.getSearchBar(query, sortType, pageNumber, pageable);
+    }
 
+    @GetMapping("/christmas_test")
+    public ResponseEntity<Void> christmasQuery(){
+        productService.christmasQuery();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
-
-
+    @GetMapping("/findImages")
+    public ResponseEntity<Void> matchPathFields(@RequestParam(value = "query") String query){
+        productService.matchPathFields(query);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
 }
 

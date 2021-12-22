@@ -16,13 +16,9 @@ public class Vote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private CommentsVoteType commentsVoteType;
-    private AnswersVoteType answersVoteType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Comment comment;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Answer answer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;

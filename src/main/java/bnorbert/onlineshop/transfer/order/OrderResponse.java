@@ -1,10 +1,11 @@
 package bnorbert.onlineshop.transfer.order;
 
+import bnorbert.onlineshop.domain.OrderStatusEnum;
 import bnorbert.onlineshop.transfer.cart.CartItemsResponse;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,9 +14,10 @@ import java.util.Set;
 public class OrderResponse {
 
     private Long id;
-    private Instant createdDate;
+    private LocalDateTime createdDate;
     private String shippingMethod;
-    private String orderStatus;
+
+    private OrderStatusEnum status;
     private double grandTotal;
     private Long userId;
     private String userEmail;
@@ -36,7 +38,7 @@ public class OrderResponse {
                 "id=" + id +
                 ", createdDate=" + createdDate +
                 ", shippingMethod='" + shippingMethod + '\'' +
-                ", orderStatus='" + orderStatus + '\'' +
+                ", status=" + status +
                 ", grandTotal=" + grandTotal +
                 ", userId=" + userId +
                 ", userEmail='" + userEmail + '\'' +

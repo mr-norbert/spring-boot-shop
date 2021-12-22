@@ -4,14 +4,13 @@ import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-
 
 public class CreateProductRequest  {
     @NotEmpty
@@ -20,11 +19,11 @@ public class CreateProductRequest  {
     private double price;
     private String description;
     private String imagePath;
-    private Instant createdDate;
+    private LocalDateTime createdDate;
     @NotNull
     private int unitInStock;
     private Boolean isAvailable;
-    private Integer viewCount;
+    private Integer hits;
     private String color;
     private String categoryName;
     private String brandName;
@@ -41,7 +40,7 @@ public class CreateProductRequest  {
                 ", createdDate=" + createdDate +
                 ", unitInStock=" + unitInStock +
                 ", isAvailable=" + isAvailable +
-                ", viewCount=" + viewCount +
+                ", hits=" + hits +
                 ", color='" + color + '\'' +
                 ", categoryName='" + categoryName + '\'' +
                 ", brandName='" + brandName + '\'' +

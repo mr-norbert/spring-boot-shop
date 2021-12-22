@@ -3,6 +3,7 @@ package bnorbert.onlineshop.service;
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.ItemMapper;
+import bnorbert.onlineshop.repository.BundleRepository;
 import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
@@ -18,7 +19,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.Instant;
+import javax.persistence.EntityManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -45,12 +46,16 @@ class CartServiceTest {
     private ItemMapper mockItemMapper;
     @Mock
     private CartItemRepository mockCartItemRepository;
+    @Mock
+    private BundleRepository bundleRepository;
+    @Mock
+    private EntityManager entityManager;
 
     private CartService cartServiceUnderTest;
 
     @BeforeEach
     void setUp() {
-        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper,  mockItemMapper, mockCartItemRepository);
+        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper,  mockItemMapper, mockCartItemRepository, bundleRepository, entityManager);
     }
 
     @Test
@@ -70,7 +75,7 @@ class CartServiceTest {
         product.setPrice(5.0);
         product.setDescription("description");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.now());
+        //product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
 
@@ -130,7 +135,7 @@ class CartServiceTest {
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(20.0);
-        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        //cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
         List<CartItem> cartItemList = Collections.singletonList(cartItem);
         when(mockCartItemRepository.findByCart(any(Cart.class))).thenReturn(cartItemList);
@@ -192,7 +197,6 @@ class CartServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(0);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
         when(mockProductService.getProduct(product.getId())).thenReturn(product);
@@ -201,7 +205,7 @@ class CartServiceTest {
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(40.0);
-        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        //cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
         cartItem.setProduct(product);
         cartItem.setUser(user);
@@ -233,7 +237,6 @@ class CartServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(0);
-        product.setCreatedDate(Instant.ofEpochSecond(0L));
         product.setCreatedBy("createdBy");
         product.setLastModifiedBy("lastModifiedBy");
 
@@ -249,7 +252,7 @@ class CartServiceTest {
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(40.0);
-        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        //cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
         cartItem.setProduct(product);
         cartItem.setUser(user);

@@ -4,7 +4,6 @@ import org.springframework.boot.actuate.audit.AuditEvent;
 import org.springframework.boot.actuate.security.AbstractAuthorizationAuditListener;
 import org.springframework.security.access.event.AbstractAuthorizationEvent;
 import org.springframework.security.access.event.AuthorizationFailureEvent;
-import org.springframework.security.web.FilterInvocation;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -23,18 +22,14 @@ public class ExposeAttemptedPathAuthorizationAuditListener extends AbstractAutho
     }
 
     private void onAuthorizationFailureEvent(AuthorizationFailureEvent event) {
-
         Map<String, Object> data = new HashMap<>();
 
-        data.put("type", event.getAccessDeniedException().getClass().getName());
-        data.put("message", event.getAccessDeniedException().getMessage());
-        data.put("requestUrl", ((FilterInvocation)event.getSource()).getRequestUrl() );
+        data.put(AUTHORIZATION_FAILURE, event.getAccessDeniedException().getMessage());
         if (event.getAuthentication().getDetails() != null) {
             data.put("details", event.getAuthentication().getDetails());
         }
         publish(new AuditEvent(event.getAuthentication().getName(), AUTHORIZATION_FAILURE,
                 data));
-
 
     }
 

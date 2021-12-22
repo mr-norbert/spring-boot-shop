@@ -1,8 +1,9 @@
 package bnorbert.onlineshop.mapper;
 
-import bnorbert.onlineshop.domain.Image;
 import bnorbert.onlineshop.domain.Product;
-import bnorbert.onlineshop.transfer.product.*;
+import bnorbert.onlineshop.transfer.product.CreateProductRequest;
+import bnorbert.onlineshop.transfer.product.ProductResponse;
+import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -20,8 +21,8 @@ public abstract class ProductMapper {
     @Mapping(target = "imagePath", source = "createProductRequest.imagePath")
     @Mapping(target = "unitInStock", source = "createProductRequest.unitInStock")
     @Mapping(target = "isAvailable", source = "createProductRequest.isAvailable")
-    @Mapping(target = "createdDate", expression = "java(java.time.Instant.now())")
-    @Mapping(target = "viewCount", source = "createProductRequest.viewCount", defaultValue = "0")
+    @Mapping(target = "createdDate", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "hits", source = "createProductRequest.hits", defaultValue = "0")
     @Mapping(target = "color", source = "createProductRequest.color")
     @Mapping(target = "categoryName", source = "createProductRequest.categoryName")
     @Mapping(target = "brandName", source = "createProductRequest.brandName")

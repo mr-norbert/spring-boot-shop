@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,7 +19,7 @@ public class UpdateResponse {
     private String description;
     private String imagePath;
     private int unitInStock;
-    private Instant createdDate;
+    private LocalDateTime createdDate;
 
     @Override
     public String toString() {

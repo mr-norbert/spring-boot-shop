@@ -43,8 +43,7 @@ public class CommentService {
     @Transactional
     public void saveComment(CommentsDto request) {
         Review review = reviewRepository.findById(request.getReviewId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Review " + request.getReviewId() + "id not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Review " + request.getReviewId() + "id not found"));
         Comment comment = commentMapper.map(request, review, authService.getCurrentUser());
         commentRepository.save(comment);
 
@@ -63,8 +62,7 @@ public class CommentService {
     public Page<CommentResponse> getCommentsForReview(Long review_id, Integer page) {
         log.info("Retrieving comments #2");
         Review review = reviewRepository.findById(review_id)
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Review with id: " + review_id + "not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Review with id: " + review_id + "not found"));
         return commentRepository.findByReview(review, PageRequest.of(page, 8))
                 .map(commentMapper::mapToCommentResponse);
     }
@@ -73,8 +71,7 @@ public class CommentService {
     public Page<CommentResponse> getCommentsByUserEmail(String email, Integer page) {
         log.info("Retrieving comments #3");
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("User: " + email + "not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User: " + email + "not found"));
         return commentRepository.findByUser(user, PageRequest.of(page, 8)).map(commentMapper::mapToCommentResponse);
     }
 

@@ -1,9 +1,11 @@
 package bnorbert.onlineshop.transfer.address;
 
+import bnorbert.onlineshop.domain.OrderStatusEnum;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
@@ -28,4 +30,7 @@ public class CreateAddressRequest {
     private String city;
     @NotEmpty
     private String zipCode;
+
+    @NotNull
+    private OrderStatusEnum orderStatus;
 }

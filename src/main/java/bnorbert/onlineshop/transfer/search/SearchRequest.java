@@ -10,10 +10,9 @@ public class SearchRequest {
     private String categoryName;
     private String brandName;
     private String color;
-    private String searchWord;
+    private String query;
     private Double price;
     private Double priceMax;
-    private Integer page;
 
     public String getCategoryName() {
         return categoryName;
@@ -39,12 +38,12 @@ public class SearchRequest {
         this.color = color;
     }
 
-    public String getSearchWord() {
-        return searchWord;
+    public String getQuery() {
+        return query;
     }
 
-    public void setSearchWord(String searchWord) {
-        this.searchWord = searchWord;
+    public void setQuery(String query) {
+        this.query = query;
     }
 
     public Double getPrice() {
@@ -65,25 +64,6 @@ public class SearchRequest {
         this.priceMax = priceMax;
     }
 
-    public Integer getPage() {
-        return page;
-    }
-
-    public void setPage(Integer page) {
-        this.page = page;
-    }
 
 
-    @Override
-    public String toString() {
-        return "SearchRequest{" +
-                "categoryName='" + categoryName + '\'' +
-                ", brandName='" + brandName + '\'' +
-                ", color='" + color + '\'' +
-                ", searchWord='" + searchWord + '\'' +
-                ", price=" + price +
-                ", priceMax=" + priceMax +
-                ", page=" + page +
-                '}';
-    }
 }

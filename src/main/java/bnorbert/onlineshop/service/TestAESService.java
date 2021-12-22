@@ -31,8 +31,8 @@ public class TestAESService {
     }
 
     public TestAES get(long id) {
-        return testAESRepository.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException(id + " not found."));
+        return testAESRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(id + " not found."));
     }
 
 

@@ -44,12 +44,10 @@ public class ReviewService {
         if (userService.isLoggedIn()) {
             Product product = productService.getProduct(request.getProductId());
 
-            Optional<Review> productAndUser =
-                    reviewRepository.findTopByProductAndUserOrderByIdDesc
-                            (product, userService.getCurrentUser());
+            Optional<Review> productAndUser = reviewRepository
+                    .findTopByProductAndUserOrderByIdDesc(product, userService.getCurrentUser());
             if (productAndUser.isPresent()) {
-                throw new ResourceNotFoundException
-                        ("You have already reviewed this product: " + request.getProductId());
+                throw new ResourceNotFoundException("You have already reviewed this product: " + request.getProductId());
             }
             reviewRepository.save(reviewMapper.map(request, product, userService.getCurrentUser()));
         }
@@ -319,17 +317,15 @@ public class ReviewService {
     public ReviewResponse getReviewId(Long id) {
         log.info("Retrieving review {}", id);
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException
-                        (id.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException(id.toString()));
 
         return reviewMapper.mapToReviewResponse(review);
     }
 
     public Review getReview(long id){
         log.info("Retrieving review {}", id);
-        return reviewRepository.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException
-                        ("Review" + id + "not found"));
+        return reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Review" + id + "not found"));
     }
 
     public void deleteReview(long id){

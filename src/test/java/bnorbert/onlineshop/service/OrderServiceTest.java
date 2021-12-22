@@ -2,10 +2,7 @@ package bnorbert.onlineshop.service;
 
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.mapper.OrderMapper;
-import bnorbert.onlineshop.repository.CartItemRepository;
-import bnorbert.onlineshop.repository.CartRepository;
-import bnorbert.onlineshop.repository.OrderRepository;
-import bnorbert.onlineshop.repository.ProductRepository;
+import bnorbert.onlineshop.repository.*;
 import bnorbert.onlineshop.transfer.address.CreateAddressRequest;
 import bnorbert.onlineshop.transfer.order.OrderResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -40,12 +38,16 @@ class OrderServiceTest {
     private CartItemRepository mockCartItemRepository;
     @Mock
     private ProductRepository mockProductRepository;
+    @Mock
+    private OrdersWordsRepository ordersWordsRepository;
+    @Mock
+    private EntityManager entityManager;
 
     private OrderService orderServiceUnderTest;
 
     @BeforeEach
     void setUp() {
-        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper, mockCartItemRepository, mockProductRepository);
+        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper, mockCartItemRepository, mockProductRepository, ordersWordsRepository, entityManager);
     }
 
     @Test
@@ -64,7 +66,7 @@ class OrderServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        product.setCreatedDate(Instant.now());
+        //product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
 
         Cart cart = new Cart();
@@ -78,7 +80,7 @@ class OrderServiceTest {
         cartItem.setId(1L);
         cartItem.setQty(5);
         cartItem.setSubTotal(5.0);
-        cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
+        //cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
         cartItem.setCreatedBy("createdBy");
         cartItem.setProduct(product);
         cartItem.setCart(cart);

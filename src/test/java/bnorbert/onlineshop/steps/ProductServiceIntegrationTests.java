@@ -1,5 +1,7 @@
 package bnorbert.onlineshop.steps;
 
+import bnorbert.onlineshop.domain.MatchesEnum;
+import bnorbert.onlineshop.domain.MatchesEnum2;
 import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.domain.ProductSortTypeEnum;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
@@ -7,17 +9,15 @@ import bnorbert.onlineshop.service.ProductService;
 import bnorbert.onlineshop.transfer.product.CreateProductRequest;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.product.UpdateResponse;
+import bnorbert.onlineshop.transfer.search.HibernateSearchResponse;
 import bnorbert.onlineshop.transfer.search.SearchRequest;
 import bnorbert.onlineshop.transfer.search.SearchResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -90,8 +90,8 @@ public class ProductServiceIntegrationTests {
 
     @Test
     public void testGetShoppingAssistant_whenValidRequest_thenReturnMatches() {
-        SearchResponse searchResponse = productService.findMatches(5, 5,
-                "string" ,"string", ProductSortTypeEnum.ID_ASC);
+        SearchResponse searchResponse = productService.findMatches(MatchesEnum._49INCHES, MatchesEnum2._1080P,
+                "string" ,"string", ProductSortTypeEnum.ID_ASC, 0);
         //assertEquals(8, searchResponse.productResponses.size());
         assertTrue(searchResponse.productResponses.size() > 0);
         assertThat(searchResponse, notNullValue());
@@ -100,29 +100,28 @@ public class ProductServiceIntegrationTests {
     @Test
     public void testSearch_whenValidRequest_thenReturnResponse() {
         SearchRequest request = new SearchRequest();
-        request.setPage(0);
-        request.setSearchWord("string");
+        request.setQuery("string");
         //request.setColor("blue");
         //request.setBrandName();
         //request.setCategoryName();
         //request.setPrice();
         //request.setPriceMax();
 
-        SearchResponse searchResponse = productService.search(request, ProductSortTypeEnum.ID_ASC);
+        HibernateSearchResponse searchResponse = productService.getSearchBox(request, ProductSortTypeEnum.ID_ASC, 0, Pageable.ofSize(2));
         //assertEquals(2, searchResponse.productResponses.size());
-        assertTrue(searchResponse.productResponses.size() > 0);
+        assertTrue(searchResponse.productResponses.getTotalElements() > 0);
         assertThat(searchResponse, notNullValue());
-        assertThat(request.getSearchWord(), notNullValue());
+        assertThat(request.getQuery(), notNullValue());
     }
 
 
-    @Test
-    public void testStore_thenReturnMultipartFile() throws IOException {
-        productService.storeFile(new MockMultipartFile(
-                "test123",
-                "test123.txt", MediaType.TEXT_PLAIN_VALUE,
-                "Hello, World".getBytes()));
-    }
+    //@Test
+    //public void testStore_thenReturnMultipartFile() throws IOException {
+    //    productService.storeFile(new MockMultipartFile(
+    //            "test123",
+    //            "test123.txt", MediaType.TEXT_PLAIN_VALUE,
+    //            "Hello, World".getBytes()));
+    //}
 
     @Test
     public void testLoadMultipartFile_thenReturnFile() {
@@ -140,6 +139,7 @@ public class ProductServiceIntegrationTests {
     public void testLoadImage() {
         productService.getImage(1L);
     }
+
 
 }
 

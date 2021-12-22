@@ -1,9 +1,11 @@
 package bnorbert.onlineshop.mapper;
 
 import bnorbert.onlineshop.domain.Order;
+import bnorbert.onlineshop.domain.OrderStatusEnum;
 import bnorbert.onlineshop.domain.User;
 import bnorbert.onlineshop.transfer.address.CreateAddressRequest;
 
+import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 public class OrderBuilder {
@@ -31,7 +33,9 @@ public class OrderBuilder {
             order.setAddress( createAddressRequest.getAddress() );
             order.setAddress2( createAddressRequest.getAddress2() );
             order.setCity( createAddressRequest.getCity() );
-            order.setState( createAddressRequest.getState());
+            order.setState( createAddressRequest.getState() );
+            order.setCreatedDate( LocalDateTime.now() );
+            order.setStatus( OrderStatusEnum.TEST );
         }
     }
 }

@@ -4,6 +4,7 @@ import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.ItemMapper;
+import bnorbert.onlineshop.repository.BundleRepository;
 import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
@@ -12,14 +13,17 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
+import javax.persistence.EntityManager;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -34,10 +38,12 @@ public class CartService {
     private final CartMapper cartMapper;
     private final ItemMapper itemMapper;
     private final CartItemRepository cartItemRepository;
+    private final BundleRepository bundleRepository;
+    private final EntityManager entityManager;
 
     public CartService(CartRepository cartRepository, UserService userService, ProductService productService,
                        PantryRepository pantryRepository, CartMapper cartMapper, ItemMapper itemMapper,
-                       CartItemRepository cartItemRepository) {
+                       CartItemRepository cartItemRepository, BundleRepository bundleRepository, EntityManager entityManager) {
         this.cartRepository = cartRepository;
         this.userService = userService;
         this.productService = productService;
@@ -45,6 +51,8 @@ public class CartService {
         this.cartMapper = cartMapper;
         this.itemMapper = itemMapper;
         this.cartItemRepository = cartItemRepository;
+        this.bundleRepository = bundleRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -54,7 +62,8 @@ public class CartService {
         Page<Pantry> pantries = pantryRepository
                 .findById(request.getProductId(), pageable);
 
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
                 .orElse(new Cart());
         if (cart.getUser() == null) {
             log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
@@ -65,33 +74,101 @@ public class CartService {
 
         Product product = productService.getProduct(request.getProductId());
 
-        List<CartItem> cartItemList = cartItemRepository.findTopByProduct_IdAndCart_Id
-                (request.getProductId(), cart.getId());
+        Optional<CartItem> cartItem = cartItemRepository.findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId());
+        if(cartItem.isPresent()){
+            cartItem.get().setQty(cartItem.get().getQty() + request.getProductQuantity());
+            cartItem.get().setSubTotal(product.getPrice() * cartItem.get().getQty());
+            cartItemRepository.save(cartItem.get());
+            cart.setGrandTotal(cart.getSum());
+        }else {
+            CartItem newCartItem = cartMapper.map(request, cart, product);
+            newCartItem.setSubTotal(product.getPrice() * newCartItem.getQty());
 
-        CartItem cartItem;
+            cart.addCartItem(newCartItem);
+            cart.setGrandTotal(cart.getSum());
 
-        if(containsIds(cartItemList, cart.getId(), product.getId())){
+            cartItemRepository.save(newCartItem);
+            cartRepository.save(cart);
+        }
 
-            cartItem = cartItemRepository.
-                    findTop1ByProductIdAndCart_Id
-                            (request.getProductId(), cart.getId())
-                    .orElseThrow(EntityNotFoundException::new);
+        cartRepository.save(cart);
 
-            cartItem.setQty(cartItem.getQty() + request.getProductQuantity());
-            cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
-            cartItemRepository.save(cartItem);
+        List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
+        return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
+
+    }
+
+    @Transactional
+    public void testGetCartItems() {
+        SearchSession searchSession = Search.session(entityManager);
+
+        List<Cart> result = searchSession.search(Cart.class)
+                .where( f -> f.bool()
+                        .must( f.nested()
+                                .objectField("lineItems")
+                                .nest(f.bool()
+                                .must(f.range()
+                                        .field( "lineItems.subTotal")
+                                        .between(30D,  10000D))
+                                       //.between(100.0 ,  10000.0))
+                                .must(f.match()
+                                        .field( "lineItems.product")
+                                        .matching( "string"))
+                        ))
+                ).fetchHits( 20 );
+
+        System.err.println(result.stream().map(Cart::getSum).collect(Collectors.toList()));
+    }
+
+    @Transactional
+    public Page<AddToCartResponse> addToCartChristmasEdition(AddProductToCartRequest request, Pageable pageable) {
+        log.info("Adding product to cart: {}", request);
+
+        Page<Pantry> pantries = pantryRepository
+                .findById(request.getProductId(), pageable);
+
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
+                .orElse(new Cart());
+        if (cart.getUser() == null) {
+            log.debug("Cart doesn't exist. Retrieving user to create a new cart.");
+            User user = userService.getUser(userService.getCurrentUser().getId());
+            cart.setUser(user);
+            cartRepository.save(cart);
+        }
+
+        Product product = productService.getProduct(request.getProductId());
+        String name = "Christmas";
+        Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(name, product.getId());
+
+        Optional<CartItem> cartItem = cartItemRepository.findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId());
+        if(cartItem.isPresent()){
+
+            cartItem.get().setQty(cartItem.get().getQty() + request.getProductQuantity());
+            if(bundle.isPresent()) {
+                double value = product.getPriceByBundle().get(bundle.get());
+                cartItem.get().setSubTotal(value * cartItem.get().getQty());
+            } else {
+                cartItem.get().setSubTotal(product.getPrice() * cartItem.get().getQty());
+            }
+            cartItemRepository.save(cartItem.get());
             cart.setGrandTotal(cart.getSum());
 
         }else {
-            cartItem = cartMapper.map(request, cart, product);//#new CartItem();
-            cartItem.setSubTotal(product.getPrice() * cartItem.getQty());
 
-            cartItemRepository.save(cartItem);
-            cart.setGrandTotal(cart.getSum());
-            if(cart.getGrandTotal() < 1){
-                cart.setGrandTotal(cartItem.getSubTotal());
+            CartItem newCartItem = cartMapper.map(request, cart, product);
+            if(bundle.isPresent()) {
+                double value = product.getPriceByBundle().get(bundle.get());
+                newCartItem.setSubTotal(value * newCartItem.getQty());
+
+            } else {
+                newCartItem.setSubTotal(product.getPrice() * newCartItem.getQty());
             }
+            cart.addCartItem(newCartItem);
+            cart.setGrandTotal(cart.getSum());
+            cartItemRepository.save(newCartItem);
         }
+
         cartRepository.save(cart);
 
         List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
@@ -128,10 +205,9 @@ public class CartService {
     @Transactional
     public CartResponse getCart() {
         log.info("Retrieving cart for : " + userService.getCurrentUser().getEmail());
-        Cart cart = cartRepository.findByUser_Id
-                (userService.getCurrentUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("There is no cart for user " + userService.getCurrentUser().getId()));
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("There is no cart for user " + userService.getCurrentUser().getId()));
 
         return cartMapper.mapToCartResponse(cart);
     }
@@ -141,18 +217,15 @@ public class CartService {
     public void updateCart(UpdateQuantityRequest request) {
         log.info("Updating cart: {}", request);
 
-        Cart cart = cartRepository.findByUser_Id(userService.getCurrentUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("There is no cart for user " + userService.getCurrentUser().getId()));
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("There is no cart for user " + userService.getCurrentUser().getId()));
 
         Product product = productService.getProduct(request.getProductId());
 
-        CartItem cartItem = cartItemRepository.findTop1ByProductIdAndCart_Id
-                (request.getProductId(), cart.getId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Product " + request.getProductId() +
-                        "and UserId " + userService.getCurrentUser().getId() +
-                        "not found. "));
+        CartItem cartItem = cartItemRepository
+                .findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product " + request.getProductId() +"and UserId " + userService.getCurrentUser().getId() +"not found. "));
 
         cartItem.setQty(request.getQty());
         cartItem.setSubTotal(product.getPrice() * request.getQty());
@@ -160,25 +233,19 @@ public class CartService {
         cartItemRepository.save(cartItem);
         cart.setGrandTotal(cart.getSum());
         cartRepository.save(cart);
-
-
     }
 
     @Transactional
     public void removeProductFromCart(RemoveProductFromCartRequest request){
         log.info("Removing product from cart: {}", request);
 
-        Cart cart = cartRepository.findByUser_Id
-                (userService.getCurrentUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("There is no cart for user " + userService.getCurrentUser().getId()));
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("There is no cart for user " + userService.getCurrentUser().getId()));
 
-        CartItem cartItem = cartItemRepository.findTop1ByProductIdAndCart_Id
-                (request.getProductId(), cart.getId())
-                .orElseThrow(() -> new ResourceNotFoundException
-                        ("Product " + request.getProductId() +
-                        "and UserId " + userService.getCurrentUser().getId() +
-                        "not found. "));
+        CartItem cartItem = cartItemRepository
+                .findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product " + request.getProductId() + "and UserId " + userService.getCurrentUser().getId() + "not found. "));
 
         cart.removeCartItem(cartItem);
         cartItemRepository.save(cartItem);
@@ -193,11 +260,9 @@ public class CartService {
         log.info("Creating payment: {}", request);
         Stripe.apiKey = secretKey;
 
-        Cart cart = cartRepository.findByUser_Id
-                (userService.getCurrentUser().getId())
-                .orElseThrow(() ->
-                new ResourceNotFoundException
-                        ("Cart: " + userService.getCurrentUser().getId() + " not found."));
+        Cart cart = cartRepository
+                .findByUser_Id(userService.getCurrentUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart: " + userService.getCurrentUser().getId() + " not found."));
 
         Set<String> paymentMethodTypes = new HashSet<>();
         paymentMethodTypes.add("card");
