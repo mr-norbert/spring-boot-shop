@@ -22,7 +22,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
@@ -78,14 +77,41 @@ public class ProductServiceIntegrationTests {
         assertThat(updatedProduct.getPrice(), is(request.getPrice()));
     }
 
-
-
-
     @Test(expected = ResourceNotFoundException.class)
     public void testDeleteProduct_whenNonExistingEntity_thenThrowNotFoundException(){
         Product product = productService.getProduct(9L);
         productService.deleteProduct(product.getId());
         productService.getProduct(9L);
+    }
+
+    @Test
+    public void testGetSearchBar_whenValidRequest_thenReturnProducts() {
+        String query = "name_field";
+        int pageNumber = 0;
+
+        HibernateSearchResponse response = productService.getSearchBar(query, ProductSortTypeEnum.ID_ASC, pageNumber, Pageable.unpaged());
+        //assertEquals(8, searchResponse.productResponses.size());
+        assertTrue(response.productResponses.getTotalElements() > 0);
+        assertTrue(response.countsByBrand.size() > 0);
+        assertThat(response, notNullValue());
+    }
+
+    @Test
+    public void testGetSearchBox_whenValidRequest_thenReturnProducts() {
+        SearchRequest request = new SearchRequest();
+        request.setQuery("name_field");
+        //request.setBrandName("");
+        //request.setCategoryName("category_field");
+        //request.setPrice(10d);
+        //request.setPriceMax(1000.0);
+        //request.setColor("");
+        int pageNumber = 0;
+
+        HibernateSearchResponse response = productService.getSearchBox(request, ProductSortTypeEnum.ID_ASC, pageNumber, Pageable.unpaged());
+        //assertEquals(8, searchResponse.productResponses.size());
+        assertTrue(response.productResponses.getTotalElements() > 0);
+        assertTrue(response.countsByBrand.size() > 0);
+        assertThat(response, notNullValue());
     }
 
     @Test
@@ -98,48 +124,44 @@ public class ProductServiceIntegrationTests {
     }
 
     @Test
-    public void testSearch_whenValidRequest_thenReturnResponse() {
-        SearchRequest request = new SearchRequest();
-        request.setQuery("string");
-        //request.setColor("blue");
-        //request.setBrandName();
-        //request.setCategoryName();
-        //request.setPrice();
-        //request.setPriceMax();
+    public void testGetSuggestions_whenValidRequest_thenReturnSuggestions() {
+        String query = "_field";
+        String response = productService.getSuggestions(query);
+        System.err.println(response);
+    }
+/*
+    @Test
+    public void testCreateImage_whenValid_thenReturnCreatedImage() {
+        productSteps.createImage();
+    }
 
-        HibernateSearchResponse searchResponse = productService.getSearchBox(request, ProductSortTypeEnum.ID_ASC, 0, Pageable.ofSize(2));
-        //assertEquals(2, searchResponse.productResponses.size());
-        assertTrue(searchResponse.productResponses.getTotalElements() > 0);
-        assertThat(searchResponse, notNullValue());
-        assertThat(request.getQuery(), notNullValue());
+    @Test
+    public void testGetImages_whenValidRequest_thenReturnImages() {
+        productSteps.getHits();
+    }
+
+ */
+
+    @Test
+    public void testGetProducts_thenReturnProductsOnSale() {
+        productService.christmasQuery();
     }
 
 
     //@Test
-    //public void testStore_thenReturnMultipartFile() throws IOException {
+    //public void testCreateImage_mediaTypeTextPlainValue() throws IOException {
     //    productService.storeFile(new MockMultipartFile(
     //            "test123",
     //            "test123.txt", MediaType.TEXT_PLAIN_VALUE,
     //            "Hello, World".getBytes()));
     //}
 
-    @Test
-    public void testLoadMultipartFile_thenReturnFile() {
-        String file = "test123.txt";
-        productService.load("test123.txt");
-        assertEquals(file, "test123.txt");
-    }
-
-    @Test
-    public void testLoadAll() {
-        productService.loadAll();
-    }
-
-    @Test
-    public void testLoadImage() {
-        productService.getImage(1L);
-    }
-
+    //@Test
+    //public void testLoadMultipartFile_thenReturnTextFile() {
+    //    String file = "test123.txt";
+    //    productService.load("test123.txt");
+    //    assertEquals(file, "test123.txt");
+    //}
 
 }
 

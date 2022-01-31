@@ -2,15 +2,18 @@ package bnorbert.onlineshop.service;
 
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
+import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.OrderBuilder;
 import bnorbert.onlineshop.mapper.OrderMapper;
 import bnorbert.onlineshop.repository.*;
 import bnorbert.onlineshop.transfer.address.CreateAddressRequest;
+import bnorbert.onlineshop.transfer.cart.CartResponse;
 import bnorbert.onlineshop.transfer.order.OrderRequest;
 import bnorbert.onlineshop.transfer.order.OrderResponse;
 import bnorbert.onlineshop.transfer.order.OrdersResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -37,11 +40,12 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrdersWordsRepository ordersWordsRepository;
     private final EntityManager entityManager;
+    private final CartMapper cartMapper;
 
     public OrderService(OrderRepository orderRepository, CartService cartService, CartRepository cartRepository,
                         UserService userService, OrderMapper orderMapper,
                         CartItemRepository cartItemRepository,
-                        ProductRepository productRepository, OrdersWordsRepository ordersWordsRepository, EntityManager entityManager) {
+                        ProductRepository productRepository, OrdersWordsRepository ordersWordsRepository, EntityManager entityManager, CartMapper cartMapper) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.cartRepository = cartRepository;
@@ -51,7 +55,30 @@ public class OrderService {
         this.productRepository = productRepository;
         this.ordersWordsRepository = ordersWordsRepository;
         this.entityManager = entityManager;
+        this.cartMapper = cartMapper;
     }
+
+    public List<CartResponse> getGodViewOverCarts(String categoryName, double lowerBound, double upperBound) {
+        log.info("Retrieving carts");
+        SearchSession searchSession = Search.session(entityManager);
+        List<Cart> hits = searchSession.search(Cart.class)
+                .where( f -> f.bool()
+                        .must( f.nested()
+                                .objectField("lineItems")
+                                .nest(f.bool()
+                                        .must(f.range()
+                                                .field( "lineItems.subTotal")
+                                                .between(lowerBound,  upperBound))
+                                        //.between(100.0 ,  10000.0))
+                                        .must(f.match()
+                                                .field( "lineItems.product")
+                                                .matching( categoryName))
+                                ))
+                ).fetchHits( 40 );
+
+        return cartMapper.entitiesToEntityDTOs(hits);
+    }
+
 
     public void createOrder(CreateAddressRequest request) {
         log.info("Creating order : {}", request);
@@ -97,7 +124,8 @@ public class OrderService {
         log.info("Updating product stock");
         product.setUnitInStock( product.getUnitInStock() - cartItem.getQty());
         if(product.getUnitInStock() < 0 ){
-            throw new ResourceNotFoundException("Not so much quantity in stock");
+            //throw new ResourceNotFoundException("Not so much quantity in stock");
+            product.setUnitInStock(0);
         }
         else if(product.getUnitInStock() < 1 ){
             product.setIsAvailable( false );
@@ -152,12 +180,11 @@ public class OrderService {
             _identifier.setWord(order.getId().toString());
             _identifier.setLength(product.getDescription().length());
             ordersWordsRepository.save(_identifier);
-
         });
     }
 
     public <T> OrdersResponses getOrders(OrderRequest request, String query, Pageable pageable, OrderTypeEnum orderType, int pageNumber) {
-
+        log.info("Retrieving orders");
         long numberOfDocs = orderRepository.count();
         String[] words = query.split(" ");
 
@@ -192,16 +219,19 @@ public class OrderService {
 
         Set<Long> idSet = new LinkedHashSet<>(sortedMap.keySet());
         List<Order> result = new ArrayList<>();
-        for (Long orderId : idSet) {
-            Order order = getOrder(orderId);
-            result.add(order);
+        if(!idSet.isEmpty()) {
+            for (Long orderId : idSet) {
+                Order order = getOrder(orderId);
+                result.add(order);
+            }
+        }else {
+            throw new ResourceNotFoundException("");
         }
 
         if (orderType == OrderTypeEnum.BETWEEN) {
             SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
             SearchResult<Order> searchResult = searchSession.search(Order.class)
                     .where(f -> f.bool(b -> {
-
                         b.must(f.id()
                                 .matchingAny(idSet));
                         if (request.getYear() != null && request.getMonth() != null && request.getDay() != null &&
@@ -211,7 +241,6 @@ public class OrderService {
                                     .between(LocalDateTime.of(request.getYear(), request.getMonth(), request.getDay(), 0, 0),
                                             LocalDateTime.of(request.get_year(), request.get_month(), request.get_day(), 0, 0)));
                         }
-
                     })).fetch(pageNumber * 4, 4);
 
             List<Order> search_result = searchResult.hits();
@@ -240,13 +269,13 @@ public class OrderService {
 
                     })).fetch(4 * pageNumber, 4);
 
-            List<Order> orderList = searchResult.hits();
+            List<Order> orders = searchResult.hits();
             long totalHitCount = searchResult.total().hitCount();
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
                 throw new ResourceNotFoundException("");
             }
-            List<OrderResponse> _response = orderMapper.entitiesToDTOs(orderList);
+            List<OrderResponse> _response = orderMapper.entitiesToDTOs(orders);
 
             return new OrdersResponses(Optional.of(_response)
                     .map(search -> new PageImpl<>(_response, pageable, totalHitCount))
@@ -254,12 +283,12 @@ public class OrderService {
         }
 
         //SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
-        //SearchResult<OrderStatusEnum> statusLogger = searchSession.search(Order.class)
+        //SearchResult<OrderStatusEnum> status = searchSession.search(Order.class)
         //        .select(f-> f.field("status", OrderStatusEnum.class))
         //        //.where(f -> f.match().field("status").matching(OrderStatusEnum.TEST))
         //        .where(f -> f.id().matchingAny(idSet))
         //        .fetch(idSet.size());
-        //System.err.println(statusLogger.hits());
+        //System.err.println(status.hits());
 
         List<OrderResponse> response = orderMapper.entitiesToDTOs(result);
 
@@ -274,8 +303,6 @@ public class OrderService {
                         (response.subList(pageNumber * pageSize, Math.min(page_number.incrementAndGet() * pageSize, response.size())), pageable, response.size()))
                 .orElseThrow(() -> new ResourceNotFoundException("")));
     }
-
-
 
     private Map<Long, Double> sortByValueReversed(Map<Long, Double> map) {
 

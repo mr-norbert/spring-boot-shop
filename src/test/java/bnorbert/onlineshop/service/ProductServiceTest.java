@@ -1,9 +1,11 @@
 package bnorbert.onlineshop.service;
 
-import bnorbert.onlineshop.domain.*;
+import bnorbert.onlineshop.domain.MatchesEnum;
+import bnorbert.onlineshop.domain.MatchesEnum2;
+import bnorbert.onlineshop.domain.Product;
+import bnorbert.onlineshop.domain.ProductSortTypeEnum;
 import bnorbert.onlineshop.mapper.ProductMapper;
 import bnorbert.onlineshop.repository.BundleRepository;
-import bnorbert.onlineshop.repository.ImageRepository;
 import bnorbert.onlineshop.repository.ProductRepository;
 import bnorbert.onlineshop.repository.QueriesRepository;
 import bnorbert.onlineshop.transfer.product.CreateProductRequest;
@@ -15,19 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,8 +40,6 @@ class ProductServiceTest {
     @Mock
     private EntityManager mockEntityManager;
     @Mock
-    private ImageRepository mockImageRepository;
-    @Mock
     private HttpServletRequest httpServletRequest;
     @Mock
     private QueriesRepository queriesRepository;
@@ -54,12 +48,10 @@ class ProductServiceTest {
 
     private ProductService productServiceUnderTest;
 
-
-
     @BeforeEach
     void setUp() {
         productServiceUnderTest = new ProductService(mockProductRepository, mockProductMapper, mockEntityManager,
-                mockImageRepository, httpServletRequest, queriesRepository, bundleRepository);
+                 httpServletRequest, queriesRepository, bundleRepository);
     }
 
 
@@ -67,7 +59,7 @@ class ProductServiceTest {
     void testCreateProduct() {
         CreateProductRequest request = new CreateProductRequest();
         request.setName("product");
-        request.setDescription("description");
+        //request.setDescription("description");
         request.setPrice(200d);
         request.setUnitInStock(100);
         request.setCreatedDate(LocalDateTime.now());
@@ -259,7 +251,7 @@ class ProductServiceTest {
 
         return productResponse;
     }
-
+/*
     @Test
     void testStoreFile() throws Exception {
 
@@ -275,23 +267,23 @@ class ProductServiceTest {
 
         when(mockImageRepository.save(image)).thenReturn(image);
 
-       // productServiceUnderTest.storeFile(file);
+        productServiceUnderTest.storeFile(file);
     }
 
-    //@Test
-    //void testCopy() {
-    //    MultipartFile file = new MockMultipartFile(
-    //            "test",
-    //            "test.txt", MediaType.TEXT_PLAIN_VALUE,
-    //            "Hello, World".getBytes());
-//
-    //    productServiceUnderTest.copy(file);
-    //}
+    @Test
+    void testCopy() {
+        MultipartFile file = new MockMultipartFile(
+                "test",
+                "test.txt", MediaType.TEXT_PLAIN_VALUE,
+                "Hello, World".getBytes());
 
-    //@Test
-    //void testInit() {
-    //    productServiceUnderTest.init();
-    //}
+        productServiceUnderTest.copy(file);
+    }
+
+    @Test
+    void testInit() {
+        productServiceUnderTest.init();
+    }
 
     @Test
     void testLoadAll() {
@@ -304,27 +296,27 @@ class ProductServiceTest {
 
     }
 
-    //@Test
-    //void testLoad() {
-    //    Resource result = productServiceUnderTest.load("test.txt");
-//
-    //}
-
     @Test
-    void testGetImage() throws IOException {
+    void testLoad() {
+        Resource result = productServiceUnderTest.load("test.txt");
+//
+    }
+
+    @Test void testGetImage() throws IOException {
 
         MultipartFile file = new MockMultipartFile(
-                "test",
-                "test12345test.txt", MediaType.TEXT_PLAIN_VALUE,
-                "Hello, World".getBytes());
+               "test",
+               "test12345test.txt", MediaType.TEXT_PLAIN_VALUE,
+               "Hello, World".getBytes());
 
         Image image = new Image();
         image.setId(1L);
         image.setOriginalFilename(file.getOriginalFilename());
         image.setPhoto(file.getBytes());
 
-        final byte[] result = productServiceUnderTest.getImage(1L);
-
+        final byte[] result = productServiceUnderTest.l(1L);
     }
+
+ */
 
 }

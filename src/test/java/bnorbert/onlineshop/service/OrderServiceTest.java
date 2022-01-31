@@ -1,6 +1,7 @@
 package bnorbert.onlineshop.service;
 
 import bnorbert.onlineshop.domain.*;
+import bnorbert.onlineshop.mapper.CartMapper;
 import bnorbert.onlineshop.mapper.OrderMapper;
 import bnorbert.onlineshop.repository.*;
 import bnorbert.onlineshop.transfer.address.CreateAddressRequest;
@@ -12,8 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.persistence.EntityManager;
-import java.time.Instant;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,12 +42,15 @@ class OrderServiceTest {
     private OrdersWordsRepository ordersWordsRepository;
     @Mock
     private EntityManager entityManager;
+    @Mock
+    private  CartMapper cartMapper;
 
     private OrderService orderServiceUnderTest;
 
     @BeforeEach
     void setUp() {
-        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper, mockCartItemRepository, mockProductRepository, ordersWordsRepository, entityManager);
+        orderServiceUnderTest = new OrderService(mockOrderRepository, mockCartService, mockCartRepository, mockUserService, mockOrderMapper,
+                mockCartItemRepository, mockProductRepository, ordersWordsRepository, entityManager, cartMapper);
     }
 
     @Test
@@ -66,7 +69,6 @@ class OrderServiceTest {
         product.setDescription("description");
         product.setImagePath("imagePath");
         product.setUnitInStock(90);
-        //product.setCreatedDate(LocalDate.now());
         product.setCreatedBy("createdBy");
 
         Cart cart = new Cart();
@@ -76,25 +78,16 @@ class OrderServiceTest {
 
         when(mockUserService.getCurrentUser()).thenReturn(user);
 
-        CartItem cartItem = new CartItem();
-        cartItem.setId(1L);
-        cartItem.setQty(5);
-        cartItem.setSubTotal(5.0);
-        //cartItem.setCreatedDate(Instant.ofEpochSecond(0L));
-        cartItem.setCreatedBy("createdBy");
-        cartItem.setProduct(product);
-        cartItem.setCart(cart);
-        cartItem.setUser(user);
-        cartItem.setOrder(new Order());
+        List<CartItem> lineItems = new ArrayList<>();
+        //lineItems.add(cartItem);
 
-        List<CartItem> cartItemList = Collections.singletonList(cartItem);
-        when(mockCartItemRepository.findByCart(any(Cart.class))).thenReturn(cartItemList);
+        when(mockCartItemRepository.findByCart(cart)).thenReturn(lineItems);
 
         //when(mockOrderMapper.map(any(CreateAddressRequest.class), any(User.class))).thenReturn(new Order());
 
-        when(mockProductRepository.save(any(Product.class))).thenReturn(product);
+        //when(mockProductRepository.save(any(Product.class))).thenReturn(product);
 
-        when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
+        //when(mockCartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
 
         when(mockOrderRepository.save(any(Order.class))).thenReturn(new Order());
 
@@ -102,7 +95,6 @@ class OrderServiceTest {
 
         verify(mockCartService).clearCart(any(Cart.class));
     }
-
 
     @Test
     void testGetOrderId() {

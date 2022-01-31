@@ -33,7 +33,7 @@ import java.util.Set;
 
 @EntityListeners(AuditingEntityListener.class)
 @TypeBinding(binder = @TypeBinderRef(type = ProductBundleForSaleTypeBinder.class))
-public class Product {
+public class Product  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +47,7 @@ public class Product {
             searchable = Searchable.YES, aggregable = Aggregable.YES)
     private double price;
 
-    //@KeywordField(name = "description", projectable = Projectable.YES)
+    @Lob
     private String description;
 
     @KeywordField(name = "color", aggregable = Aggregable.YES)

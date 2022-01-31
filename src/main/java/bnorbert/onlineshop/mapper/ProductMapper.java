@@ -7,7 +7,6 @@ import bnorbert.onlineshop.transfer.product.UpdateResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -54,5 +53,5 @@ public abstract class ProductMapper {
 
     public abstract List<ProductResponse> entitiesToEntityDTOs(List<Product> products);
 
-    public abstract LinkedHashSet<ProductResponse> entitiesToDTOs(Set<Product> products);
+    public abstract Set<ProductResponse> entitiesToDTOs(Set<Product> products);
 }

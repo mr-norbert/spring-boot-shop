@@ -1,14 +1,28 @@
 package bnorbert.onlineshop.domain;
 
+import bnorbert.onlineshop.binder.MultiTypeReviewMetadataBinder;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SortNatural;
+import org.hibernate.search.engine.backend.types.Aggregable;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.engine.backend.types.Searchable;
+import org.hibernate.search.engine.backend.types.Sortable;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Entity
 @Getter
 @Setter
+@Indexed
 public class Review {
 
     @Id
@@ -20,12 +34,25 @@ public class Review {
     //@ColumnTransformer(read = "AES_DECRYPT(UNHEX(content), 'body')", write = "HEX(AES_ENCRYPT(?, 'body'))")
     private String content;
     private Instant createdDate;
+    private int predictedRating;
+    @GenericField(name = "rating_probability", sortable = Sortable.YES, projectable = Projectable.YES,
+            searchable = Searchable.YES, aggregable = Aggregable.YES)
+    private double ratingProbability;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Product product;
+
+    //@ElementCollection
+    //@SortNatural
+    //private Map<String, String> predictions = new TreeMap<>();
+
+    @ElementCollection
+    @SortNatural
+    @PropertyBinding(binder = @PropertyBinderRef(type = MultiTypeReviewMetadataBinder.class))
+    private Map<String, Serializable> multiTypeReviewMetadata = new TreeMap<>();
 
     @Override
     public boolean equals(Object o) {
@@ -42,7 +69,5 @@ public class Review {
         result = (int) (rating ^ (rating >>> 32));
         return result;
     }
-
-
 
 }

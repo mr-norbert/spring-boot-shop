@@ -9,21 +9,15 @@ import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
-import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.search.mapper.orm.Search;
-import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -39,11 +33,10 @@ public class CartService {
     private final ItemMapper itemMapper;
     private final CartItemRepository cartItemRepository;
     private final BundleRepository bundleRepository;
-    private final EntityManager entityManager;
 
     public CartService(CartRepository cartRepository, UserService userService, ProductService productService,
                        PantryRepository pantryRepository, CartMapper cartMapper, ItemMapper itemMapper,
-                       CartItemRepository cartItemRepository, BundleRepository bundleRepository, EntityManager entityManager) {
+                       CartItemRepository cartItemRepository, BundleRepository bundleRepository) {
         this.cartRepository = cartRepository;
         this.userService = userService;
         this.productService = productService;
@@ -52,7 +45,6 @@ public class CartService {
         this.itemMapper = itemMapper;
         this.cartItemRepository = cartItemRepository;
         this.bundleRepository = bundleRepository;
-        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -86,9 +78,7 @@ public class CartService {
 
             cart.addCartItem(newCartItem);
             cart.setGrandTotal(cart.getSum());
-
             cartItemRepository.save(newCartItem);
-            cartRepository.save(cart);
         }
 
         cartRepository.save(cart);
@@ -96,28 +86,6 @@ public class CartService {
         List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
         return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
 
-    }
-
-    @Transactional
-    public void testGetCartItems() {
-        SearchSession searchSession = Search.session(entityManager);
-
-        List<Cart> result = searchSession.search(Cart.class)
-                .where( f -> f.bool()
-                        .must( f.nested()
-                                .objectField("lineItems")
-                                .nest(f.bool()
-                                .must(f.range()
-                                        .field( "lineItems.subTotal")
-                                        .between(30D,  10000D))
-                                       //.between(100.0 ,  10000.0))
-                                .must(f.match()
-                                        .field( "lineItems.product")
-                                        .matching( "string"))
-                        ))
-                ).fetchHits( 20 );
-
-        System.err.println(result.stream().map(Cart::getSum).collect(Collectors.toList()));
     }
 
     @Transactional
@@ -254,7 +222,7 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-
+/*
     @Transactional
     public PaymentIntent paymentIntent(PaymentIntentDto request) throws StripeException {
         log.info("Creating payment: {}", request);
@@ -296,5 +264,7 @@ public class CartService {
         paymentIntent.cancel();
         return paymentIntent;
     }
+
+ */
 
 }

@@ -83,7 +83,7 @@ class CartControllerTest {
 
         verify(mockCartService).removeProductFromCart(any(RemoveProductFromCartRequest.class));
     }
-
+/*
     @Test
     void testPayment() throws Exception {
 
@@ -151,4 +151,6 @@ class CartControllerTest {
             cartControllerUnderTest.cancel("id");
         }).isInstanceOf(StripeException.class).hasMessageContaining("message");
     }
+
+ */
 }

@@ -1,10 +1,17 @@
 package bnorbert.onlineshop.service;
 
+import ai.djl.Application;
+import ai.djl.ModelException;
+import ai.djl.inference.Predictor;
+import ai.djl.modality.nlp.qa.QAInput;
+import ai.djl.repository.zoo.Criteria;
+import ai.djl.repository.zoo.ZooModel;
+import ai.djl.training.util.ProgressBar;
+import ai.djl.translate.TranslateException;
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 import bnorbert.onlineshop.mapper.ProductMapper;
 import bnorbert.onlineshop.repository.BundleRepository;
-import bnorbert.onlineshop.repository.ImageRepository;
 import bnorbert.onlineshop.repository.ProductRepository;
 import bnorbert.onlineshop.repository.QueriesRepository;
 import bnorbert.onlineshop.transfer.product.CreateProductRequest;
@@ -22,37 +29,25 @@ import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.hibernate.search.util.common.SearchTimeoutException;
 import org.hibernate.search.util.common.data.Range;
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.FileSystemUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @Slf4j
 @Transactional
-public class ProductService implements FileStorageService {
+public class ProductService {
 
     //private static final String CATEGORY_FIELD = "category.name"; //IndexedEmbedded
     //private static final String BRAND_FIELD = "brand.name"; //IndexedEmbedded
@@ -63,40 +58,29 @@ public class ProductService implements FileStorageService {
     private static final String FIELD_NAME = "name";
     private static final String IS_AVAILABLE_FIELD = "isAvailable";
 
-    private static final String PATH_FIELD_NAME = "words.name";
-    private static final String PATH_FIELD_CATEGORY = "words.category";
-    private static final String PATH_FIELD_BRAND = "words.brand";
-    private static final String PATH_FIELD_PRODUCT_ID = "words.productId";
-
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final EntityManager entityManager;
-    private final ImageRepository imageRepository;
     private final HttpServletRequest httpServletRequest;
     private final QueriesRepository queriesRepository;
     private final BundleRepository bundleRepository;
 
     public ProductService(ProductRepository productRepository, ProductMapper productMapper, EntityManager entityManager,
-                          ImageRepository imageRepository, HttpServletRequest httpServletRequest, QueriesRepository queriesRepository,
+                          HttpServletRequest httpServletRequest, QueriesRepository queriesRepository,
                           BundleRepository bundleRepository) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.entityManager = entityManager;
-        this.imageRepository = imageRepository;
         this.httpServletRequest = httpServletRequest;
         this.queriesRepository = queriesRepository;
         this.bundleRepository = bundleRepository;
     }
 
-    private final String[] toWatch = new String[]{
-            PATH_FIELD_NAME, PATH_FIELD_CATEGORY, PATH_FIELD_BRAND, PATH_FIELD_PRODUCT_ID
-    };
-
     private final String[] searchBarFields = new String[]{
             FIELD_NAME, FIELD_BRAND, FIELD_COLOR
     };
 
-    public ProductResponse createProduct(CreateProductRequest request){
+    public ProductResponse createProduct(CreateProductRequest request) {
         log.info("Creating product: {}", request);
         //return productMapper.mapToProductResponse(productRepository.save(productMapper.map(request)));
         Product product = //productRepository.save(productMapper.map(request));
@@ -108,6 +92,9 @@ public class ProductService implements FileStorageService {
         Map<Bundle, Double> linkedHashMap = new LinkedHashMap<>();
         linkedHashMap.put(bundle, product.getPrice());
         product.setPriceByBundle(linkedHashMap);
+        if (request.getDescription().length() > 1500) {
+            throw new ResourceNotFoundException("");
+        }
 
         bundleRepository.save(bundle);
         productRepository.save(product);
@@ -115,7 +102,7 @@ public class ProductService implements FileStorageService {
         return productMapper.mapToProductResponse(product);
     }
 
-    public ProductResponse bindThem(Long productId){
+    public ProductResponse bindThem(Long productId) {
         System.err.println("Retrieving product: " + productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(""));
@@ -123,20 +110,31 @@ public class ProductService implements FileStorageService {
         String name = "Christmas";
         Bundle newBundle = new Bundle();
         Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(name, productId);
-        if(bundle.isPresent()){
+        if (bundle.isPresent()) {
             throw new ResourceNotFoundException("");
-        }else {
+        } else {
             newBundle.setName(name);
             newBundle.setProduct(product);
             Map<Bundle, Double> linkedHashMap = new LinkedHashMap<>();
             linkedHashMap.put(newBundle, product.getPrice() - 5.99D);
             product.setPriceByBundle(linkedHashMap);
         }
-
         bundleRepository.save(newBundle);
         productRepository.save(product);
 
         return productMapper.mapToProductResponse(product);
+    }
+
+    public String fixDescription(String input) {
+        return removeControlCharFull(input);
+    }
+
+    private String removeControlCharFull(String string) {
+        return removeNonPrintable(string).replaceAll("[\\r\\n\\t]", "");
+    }
+
+    private String removeNonPrintable(String string) {
+        return string.replaceAll("[\\p{C}]", "");
     }
 
     public void christmasQuery() {
@@ -145,13 +143,12 @@ public class ProductService implements FileStorageService {
         SearchResult<Product> searchResult = searchSession.search(Product.class)
                 .where(f -> f.match()
                         .field("bundleForSale")
-                        .matching( "Christmas"))
+                        .matching("Christmas"))
                 .fetch(20);
         List<Product> result = searchResult.hits();
 
         System.err.println(result.stream().map(Product::getId).collect(Collectors.toList()));
     }
-
 
     public ProductResponse getProductId(Long id) {
         log.info("Retrieving product {}", id);
@@ -162,10 +159,10 @@ public class ProductService implements FileStorageService {
         Query newQuery = new Query();
         Optional<Query> query = queriesRepository.findTop1ByUserIpAndQuery
                 (getClientIP(), product.getName().toLowerCase());
-        if(query.isPresent()){
+        if (query.isPresent()) {
             query.get().incrementHits();
             queriesRepository.save(query.get());
-        }else {
+        } else {
             newQuery.setQuery(product.getName().toLowerCase());
             newQuery.setUserIp(getClientIP());
             newQuery.setHits(1);
@@ -176,20 +173,13 @@ public class ProductService implements FileStorageService {
         return productMapper.mapToProductResponse(product);
     }
 
-    public Product getProduct(long id){
+    public Product getProduct(long id) {
         log.info("Retrieving product {}", id);
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product" + id + "not found"));
     }
 
-    public Image getImageId(long id){
-        log.info("Retrieving image {}", id);
-        return imageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Image" + id + "not found"));
-    }
-
-
-    public UpdateResponse updateProduct(long id, CreateProductRequest request){
+    public UpdateResponse updateProduct(long id, CreateProductRequest request) {
         log.info("Updating product {}: {}", id, request);
         Product product = getProduct(id);
         BeanUtils.copyProperties(request, product);
@@ -198,24 +188,9 @@ public class ProductService implements FileStorageService {
         return productMapper.mapToUpdateResponse(product);
     }
 
-    public void deleteProduct(long id){
+    public void deleteProduct(long id) {
         log.info("Deleting product {}", id);
         productRepository.deleteById(id);
-    }
-
-    public void matchPathFields(String query){
-        SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
-        SearchResult<Image> farAndWide = searchSession.search(Image.class)
-                .where(f -> f.match()
-                        .fields(toWatch)
-                        .matching(query))
-                .fetch(20);
-        List<Image> result = farAndWide.hits();
-
-        System.err.println(result.stream()
-                .map(Image::getId)
-                //.distinct()
-                .collect(Collectors.toList()));
     }
 
     public String getSuggestions(String query) {
@@ -233,12 +208,44 @@ public class ProductService implements FileStorageService {
 
     private String getClientIP() {
         String xfHeader = httpServletRequest.getHeader("X-Forwarded-For");
-        if (xfHeader == null){
+        if (xfHeader == null) {
             return httpServletRequest.getRemoteAddr();
         }
         return xfHeader.split(",")[0];
     }
 
+    public String getAnswers(String query, long productId) throws IOException, TranslateException, ModelException {
+        /*
+        try
+        how ...?
+        where ... ?
+        what ...?
+        etc.
+         */
+
+        Product product = getProduct(productId);
+        String context = product.getDescription();
+
+        QAInput input = new QAInput(query, context);
+        log.info("Paragraph: {}", input.getParagraph());
+        log.info("Paragraph length: {}", input.getParagraph().length());
+        log.info("Question: {}", input.getQuestion());
+
+        Criteria<QAInput, String> criteria =
+                Criteria.builder()
+                        .optApplication(Application.NLP.QUESTION_ANSWER)
+                        .setTypes(QAInput.class, String.class)
+                        .optFilter("backbone", "bert")
+                        .optProgress(new ProgressBar())
+                        .build();
+
+        try (ZooModel<QAInput, String> model = criteria.loadModel()) {
+            try (Predictor<QAInput, String> predictor = model.newPredictor()) {
+                System.err.println(predictor.predict(input));
+                return predictor.predict(input);
+            }
+        }
+    }
 
     public <T> HibernateSearchResponse getSearchBar(String input, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
         log.info("Retrieving products. sortType : {} ", sortType);
@@ -501,8 +508,8 @@ public class ProductService implements FileStorageService {
                                       ProductSortTypeEnum sortType, int pageNumber) {
         log.info("Retrieving products : {}, : {}", e1, e2);
 
-        Product selectedSpecs = customBuilder(e1.getNumber(), e2.getNumber());
         containsSpecs(e1.getNumber(), e2.getNumber());
+        Product selectedSpecs = customBuilder(e1.getNumber(), e2.getNumber());
 
         return getShoppingAssistant(selectedSpecs, partialName, categoryName, sortType, pageNumber);
     }
@@ -513,9 +520,9 @@ public class ProductService implements FileStorageService {
 
     private void containsSpecs(int specification, int secondSpec) {
         if (!inRange(specification)){
-            throw new IllegalStateException();
+            throw new IllegalStateException("");
         }else if(!inRange(secondSpec)){
-            throw new IllegalStateException();
+            throw new IllegalStateException("");
         }
     }
 
@@ -773,123 +780,6 @@ public class ProductService implements FileStorageService {
                 .secondSpec( secondSpec)
                 .build();
     }
-
-    private final Path rootLocation = Paths.get("src/main/resources/images");
-
-    private boolean imageExists(String name, byte[] bytes){
-        return imageRepository.findByOriginalFilenameAndPhoto(name, bytes).isPresent();
-    }
-
-    public void createImage(MultipartFile file, long productId//, Optional<String> word
-    ) throws IOException {
-        log.info("Storing image: {}", file.getOriginalFilename());
-
-        Image image = new Image();
-        try {
-            image.setPhoto(file.getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-        image.setOriginalFilename(file.getOriginalFilename());
-        image.setSize(file.getSize());
-        image.setCreatedDate(LocalDateTime.now());
-
-        Product product = getProduct(productId);
-        image.setProduct(product);
-        Map<String, String> words = new TreeMap<>();
-        words.put( "name", product.getName());
-        words.put( "category", product.getCategoryName());
-        words.put( "brand", product.getBrandName());
-        words.put( "productId", product.getId().toString());
-        image.setWords(words);
-
-        if (imageExists(file.getOriginalFilename(), file.getBytes())) {
-            throw new IllegalArgumentException("Image is present");
-        }
-        imageRepository.save(image);
-        //copy(file);
-    }
-
-    public void copy(MultipartFile file) {
-        try {
-            if (file.isEmpty()) {
-                throw new RuntimeException("Failed to store empty file.");
-            }
-            Path destinationFile = this.rootLocation.resolve(
-                            Paths.get(Objects.requireNonNull(file.getOriginalFilename())))
-                    .normalize().toAbsolutePath();
-            if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-
-                throw new RuntimeException(
-                        "Cannot store file outside current directory.");
-            }
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationFile,
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Failed to store file.", e);
-        }
-    }
-
-
-    @Override
-    public void init() {
-        //try {
-        //    Files.createDirectory(rootLocation);
-        //} catch (IOException e) {
-        //    throw new RuntimeException("Could not initialize folder for upload! " + e.getMessage());
-        //}
-    }
-
-    @Override
-    public Stream<Path> loadAll() {
-        try {
-            return Files.walk(this.rootLocation, 1)
-                    .filter(path -> !path.equals(this.rootLocation))
-                    .map(this.rootLocation::relativize);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not load the files!" + e.getMessage());
-        }
-    }
-
-
-    @Override
-    public void deleteAll() {
-        FileSystemUtils.deleteRecursively(rootLocation.toFile());
-    }
-
-
-    @Override
-    public Resource load(String name) {
-        log.info("Retrieving image {}", name);
-        try {
-            Path file = rootLocation.resolve(name);
-            Resource resource = new UrlResource(file.toUri());
-
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new RuntimeException("Could not read the file!");
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error: " + e.getMessage());
-        }
-    }
-
-
-    public byte[] getImage(long imageId) {
-        log.info("Retrieving image {}", imageId);
-
-        Optional<Image> image = imageRepository.findById(imageId);
-        byte[] imageBytes = null;
-        if (image.isPresent()) {
-            imageBytes = image.get().getPhoto();
-        }
-        return imageBytes;
-    }
-
 }
 
 class CustomForEach {

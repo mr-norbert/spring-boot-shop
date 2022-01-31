@@ -8,7 +8,6 @@ import bnorbert.onlineshop.repository.CartItemRepository;
 import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
-import com.stripe.model.PaymentIntent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,12 +18,12 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import javax.persistence.EntityManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,14 +47,12 @@ class CartServiceTest {
     private CartItemRepository mockCartItemRepository;
     @Mock
     private BundleRepository bundleRepository;
-    @Mock
-    private EntityManager entityManager;
 
     private CartService cartServiceUnderTest;
 
     @BeforeEach
     void setUp() {
-        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper,  mockItemMapper, mockCartItemRepository, bundleRepository, entityManager);
+        cartServiceUnderTest = new CartService(mockCartRepository, mockUserService, mockProductService, mockPantryRepository, mockCartMapper,  mockItemMapper, mockCartItemRepository, bundleRepository);
     }
 
     @Test
@@ -266,7 +263,7 @@ class CartServiceTest {
         cartServiceUnderTest.removeProductFromCart(request);
     }
 
-
+/*
     @Test
     void testPaymentIntent() throws Exception {
 
@@ -370,6 +367,6 @@ class CartServiceTest {
         PaymentIntent result = cartServiceUnderTest.cancel("id");
     }
 
-
+ */
 
 }

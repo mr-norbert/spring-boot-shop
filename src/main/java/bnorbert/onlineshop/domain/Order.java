@@ -60,4 +60,9 @@ public class Order {
         cartItem.setOrder(this);
     }
 
+    //@ElementCollection
+    //@SortNatural
+    //@PropertyBinding(binder = @PropertyBinderRef(type = OrderWordsBinder.class))
+    //private Map<String, String> backupWords = new TreeMap<>();
+
 }

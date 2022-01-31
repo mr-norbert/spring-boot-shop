@@ -1,5 +1,35 @@
 package bnorbert.onlineshop.service;
 
+import ai.djl.Application;
+import ai.djl.Device;
+import ai.djl.MalformedModelException;
+import ai.djl.Model;
+import ai.djl.engine.Engine;
+import ai.djl.inference.Predictor;
+import ai.djl.modality.Classifications;
+import ai.djl.modality.nlp.DefaultVocabulary;
+import ai.djl.modality.nlp.Vocabulary;
+import ai.djl.modality.nlp.bert.BertFullTokenizer;
+import ai.djl.modality.nlp.bert.BertTokenizer;
+import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
+import ai.djl.ndarray.types.DataType;
+import ai.djl.ndarray.types.Shape;
+import ai.djl.nn.Activation;
+import ai.djl.nn.Block;
+import ai.djl.nn.LambdaBlock;
+import ai.djl.nn.SequentialBlock;
+import ai.djl.nn.core.Linear;
+import ai.djl.nn.norm.Dropout;
+import ai.djl.repository.zoo.Criteria;
+import ai.djl.repository.zoo.ModelNotFoundException;
+import ai.djl.repository.zoo.ZooModel;
+import ai.djl.training.util.ProgressBar;
+import ai.djl.translate.Batchifier;
+import ai.djl.translate.TranslateException;
+import ai.djl.translate.Translator;
+import ai.djl.translate.TranslatorContext;
 import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.domain.Review;
 import bnorbert.onlineshop.domain.User;
@@ -12,14 +42,21 @@ import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.review.CreateReviewRequest;
 import bnorbert.onlineshop.transfer.review.GetReviewsRequest;
 import bnorbert.onlineshop.transfer.review.ReviewResponse;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -28,7 +65,6 @@ import java.util.stream.DoubleStream;
 @Service
 @Slf4j
 @Transactional
-@AllArgsConstructor
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
@@ -37,9 +73,20 @@ public class ReviewService {
     private final ReviewMapper reviewMapper;
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final EntityManager entityManager;
 
+    public ReviewService(ReviewRepository reviewRepository, ProductService productService, UserService userService,
+                         ReviewMapper reviewMapper, ProductRepository productRepository, ProductMapper productMapper, EntityManager entityManager) {
+        this.reviewRepository = reviewRepository;
+        this.productService = productService;
+        this.userService = userService;
+        this.reviewMapper = reviewMapper;
+        this.productRepository = productRepository;
+        this.productMapper = productMapper;
+        this.entityManager = entityManager;
+    }
 
-    public void createReview(CreateReviewRequest request){
+    public void createReview(CreateReviewRequest request) throws MalformedModelException, IOException, ModelNotFoundException, TranslateException {
         log.info("Creating review: {}", request);
         if (userService.isLoggedIn()) {
             Product product = productService.getProduct(request.getProductId());
@@ -49,7 +96,232 @@ public class ReviewService {
             if (productAndUser.isPresent()) {
                 throw new ResourceNotFoundException("You have already reviewed this product: " + request.getProductId());
             }
-            reviewRepository.save(reviewMapper.map(request, product, userService.getCurrentUser()));
+
+            Review review = reviewMapper.map(request, product, userService.getCurrentUser());
+
+            String modelUrls = "https://resources.djl.ai/test-models/distilbert.zip";
+            Criteria<NDList, NDList> criteria =
+                    Criteria.builder()
+                            .optApplication(Application.NLP.WORD_EMBEDDING)
+                            .setTypes(NDList.class, NDList.class)
+                            .optModelUrls(modelUrls)
+                            .optEngine("MXNet")
+                            .optProgress(new ProgressBar())
+                            .build();
+
+            try (Model _model = Model.newInstance("AmazonReviewRatingClassification");
+                 ZooModel<NDList, NDList> embedding = criteria.loadModel()) {
+                DefaultVocabulary vocabulary =
+                        DefaultVocabulary.builder()
+                                .addFromTextFile(embedding.getArtifact("vocab.txt"))
+                                .optUnknownToken("[UNK]")
+                                .build();
+                BertFullTokenizer tokenizer = new BertFullTokenizer(vocabulary, true);
+                _model.setBlock(getBlock(embedding.newPredictor()));
+
+                Path modelPath = Paths.get("src/main/resources/trained");
+                Model model = Model.newInstance("Mundi");
+                model.setBlock(getBlock(embedding.newPredictor()));
+                model.load(modelPath, "amazon-review.param");
+
+                Predictor<String, Classifications> predictor = model.newPredictor(new MyTranslator(tokenizer));
+                Classifications classifications = predictor.predict(request.getContent().toLowerCase());
+
+                String best = classifications.best().getClassName();
+                int number;
+                try {
+                    number = Integer.parseInt(best);
+                    review.setPredictedRating(number);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+                review.setRatingProbability(classifications.best().getProbability() * 100d);
+
+                sentimentAnalysis(request, product, review, classifications);
+                model.close();
+            }
+            reviewRepository.save(review);
+        }
+
+    }
+
+    private void sentimentAnalysis(CreateReviewRequest request, Product product, Review review, Classifications classifications) throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
+
+        //ExecutorService executorService = Executors.newFixedThreadPool(8);
+        Criteria<String, Classifications> criteria =
+                Criteria.builder()
+                        .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
+                        .setTypes(String.class, Classifications.class)
+                        .optEngine("PyTorch")
+                        .optDevice(Device.cpu())
+                        .optProgress(new ProgressBar())
+                        .build();
+
+        try (ZooModel<String, Classifications> model = criteria.loadModel();
+             //Predictor<String, Classifications> predictor = model.newPredictor()) {
+            Predictor<String, Classifications> predictor = model.newPredictor(new Translator<String, Classifications>() {
+                private Vocabulary vocabulary;
+                private BertTokenizer tokenizer;
+
+                @Override
+                public void prepare(TranslatorContext ctx) throws IOException {
+                    Model model = ctx.getModel();
+                    URL url = model.getArtifact("distilbert-base-uncased-finetuned-sst-2-english-vocab.txt");
+                    vocabulary =
+                            DefaultVocabulary.builder().addFromTextFile(url).optUnknownToken("[UNK]").build();
+                    tokenizer = new BertTokenizer();
+                }
+
+                @Override
+                public Classifications processOutput(TranslatorContext ctx, NDList list) {
+                    NDArray raw = list.singletonOrThrow();
+                    NDArray computed = raw.exp().div(raw.exp().sum(new int[]{0}, true));
+                    return new Classifications(Arrays.asList("Negative", "Positive"), computed);
+                }
+
+                @Override
+                public NDList processInput(TranslatorContext ctx, String input) {
+                    List<String> tokens = tokenizer.tokenize(input);
+                    long[] indices = tokens.stream().mapToLong(vocabulary::getIndex).toArray();
+                    long[] attentionMask = new long[tokens.size()];
+                    Arrays.fill(attentionMask, 1);
+                    NDManager manager = ctx.getNDManager();
+                    NDArray indicesArray = manager.create(indices);
+                    NDArray attentionMaskArray = manager.create(attentionMask);
+                    return new NDList(indicesArray, attentionMaskArray);
+                }
+            })) {
+
+            Classifications newClassifications = predictor.predict(request.getIntent().toLowerCase());//title
+            bindThem(request, product, review, classifications, newClassifications);
+
+        }
+        //finally{
+        //    executorService.shutdownNow();
+        //}
+
+    }
+
+
+    private void bindThem(CreateReviewRequest request, Product product, Review review, Classifications classifications, Classifications newClassifications) {
+
+        Map<String, Serializable> binder = new TreeMap<>();
+        binder.put("comment", request.getContent());
+        binder.put("rating_int", classifications.best().getClassName());
+        binder.put("category", product.getCategoryName());
+        binder.put("product", product.getName());
+        binder.put("sentiment_analysis" , newClassifications.toJson());
+        binder.put("review_rating_classification", classifications.toString());
+        review.setMultiTypeReviewMetadata(binder);
+        log.info("Binder : {}", binder);
+    }
+
+    public List<ReviewResponse> retrieveReviews(String rating){
+        log.info("Retrieving reviews");
+        SearchSession searchSession = Search.session(entityManager);
+
+        List<Review> hits = searchSession.search(Review.class)
+                .where(f -> f.bool(b -> {
+                    b.must(f.match().field( "multiTypeReviewMetadata.rating_int")
+                            .matching(rating));
+                    //b.must(f.match().field( "multiTypeReviewMetadata.category")
+                    //        .matching("category"));
+                    //b.must(f.match().field( "sentiment")
+                    //        .matching( "positive"));
+                    b.must(f.range().field( "rating_probability")
+                            .between( 83D, 100D));
+                    //b.must(f.range().field( "rating_probability")
+                    //        .between( 90.0, 100.0));
+
+                }))
+                //.sort( f -> f.field( "multiTypeReviewMetadata.rating_int" ).desc() )
+                .fetchHits( 100);
+
+        return reviewMapper.entitiesToEntityDTOs(hits);
+    }
+
+
+    private static class MyTranslator implements Translator<String, Classifications> {
+
+        private final BertFullTokenizer tokenizer;
+        private final Vocabulary vocab;
+        private final List<String> ranks;
+
+        public MyTranslator(BertFullTokenizer tokenizer) {
+            this.tokenizer = tokenizer;
+            vocab = tokenizer.getVocabulary();
+            ranks = Arrays.asList("1", "2", "3", "4", "5");
+        }
+
+        @Override
+        public Batchifier getBatchifier() { return Batchifier.STACK; }
+
+        @Override
+        public NDList processInput(TranslatorContext ctx, String input) {
+            List<String> tokens = tokenizer.tokenize(input);
+            float[] indices = new float[tokens.size() + 2];
+            indices[0] = vocab.getIndex("[CLS]");
+            for (int i = 0; i < tokens.size(); i++) {
+                indices[i+1] = vocab.getIndex(tokens.get(i));
+            }
+            indices[indices.length - 1] = vocab.getIndex("[SEP]");
+            return new NDList(ctx.getNDManager().create(indices));
+        }
+
+        @Override
+        public Classifications processOutput(TranslatorContext ctx, NDList list) {
+            return new Classifications(ranks, list.singletonOrThrow().softmax(0));
+        }
+    }
+
+    private static Block getBlock(Predictor<NDList, NDList> embedder) {
+        return new SequentialBlock()
+                // text embedding layer
+                .add(addFreezeLayer(embedder))
+                // Classification layers
+                .add(Linear.builder().setUnits(768).build()) // pre classifier
+                .add(Activation::relu)
+                .add(Dropout.builder().optRate(0.2f).build())
+                .add(Linear.builder().setUnits(5).build()) // 5 star rating
+                .addSingleton(nd -> nd.get(":,0")); // follow HF classifier
+    }
+
+    private static Block addFreezeLayer(Predictor<NDList, NDList> embedder) {
+        if ("PyTorch".equals(Engine.getDefaultEngineName())) {
+            return new LambdaBlock(
+                    ndList -> {
+                        NDArray data = ndList.singletonOrThrow();
+                        try {
+                            return embedder.predict(
+                                    new NDList(
+                                            data.toType(DataType.INT64, false),
+                                            data.getManager()
+                                                    .full(data.getShape(), 1, DataType.INT64),
+                                            data.getManager()
+                                                    .arange(data.getShape().get(1))
+                                                    .toType(DataType.INT64, false)
+                                                    .broadcast(data.getShape())));
+                        } catch (TranslateException e) {
+                            throw new IllegalArgumentException("embedding error", e);
+                        }
+                    });
+        } else {
+            // MXNet
+            return new LambdaBlock(
+                    ndList -> {
+                        NDArray data = ndList.singletonOrThrow();
+                        long batchSize = data.getShape().get(0);
+                        float maxLength = data.getShape().get(1);
+                        try {
+                            return embedder.predict(
+                                    new NDList(
+                                            data,
+                                            data.getManager()
+                                                    .full(new Shape(batchSize), maxLength)));
+                        } catch (TranslateException e) {
+                            throw new IllegalArgumentException("embedding error", e);
+                        }
+                    });
         }
     }
 
@@ -355,8 +627,6 @@ public class ReviewService {
 
 
 }
-
-
 
 class MedianOfDoubleStream {
 

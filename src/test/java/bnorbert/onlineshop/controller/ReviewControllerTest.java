@@ -1,5 +1,8 @@
 package bnorbert.onlineshop.controller;
 
+import ai.djl.MalformedModelException;
+import ai.djl.repository.zoo.ModelNotFoundException;
+import ai.djl.translate.TranslateException;
 import bnorbert.onlineshop.service.ReviewService;
 import bnorbert.onlineshop.transfer.review.CreateReviewRequest;
 import bnorbert.onlineshop.transfer.review.GetReviewsRequest;
@@ -15,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -36,7 +40,7 @@ class ReviewControllerTest {
     }
 
     @Test
-    void testCreateReview() {
+    void testCreateReview() throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
 
         final CreateReviewRequest request = new CreateReviewRequest();
         request.setIntent("intent");

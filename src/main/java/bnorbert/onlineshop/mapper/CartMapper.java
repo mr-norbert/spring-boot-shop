@@ -9,6 +9,8 @@ import bnorbert.onlineshop.transfer.cart.CartResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public abstract class CartMapper {
 
@@ -35,6 +37,6 @@ public abstract class CartMapper {
     @Mapping(target = "userEmail", source = "user.email")
     public abstract CartResponse mapToCartResponse(Cart cart);
 
-
+    public abstract List<CartResponse> entitiesToEntityDTOs(List<Cart> carts);
 
 }

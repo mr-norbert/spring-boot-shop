@@ -1,5 +1,8 @@
 package bnorbert.onlineshop.service;
 
+import ai.djl.MalformedModelException;
+import ai.djl.repository.zoo.ModelNotFoundException;
+import ai.djl.translate.TranslateException;
 import bnorbert.onlineshop.domain.Product;
 import bnorbert.onlineshop.domain.Review;
 import bnorbert.onlineshop.domain.User;
@@ -21,6 +24,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import javax.persistence.EntityManager;
+import java.io.IOException;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,16 +49,18 @@ class ReviewServiceTest {
     private ProductRepository productRepository;
     @Mock
     private ProductMapper mockProductMapper;
+    @Mock
+    private EntityManager entityManager;
 
     private ReviewService reviewServiceUnderTest;
 
     @BeforeEach
     void setUp() {
-        reviewServiceUnderTest = new ReviewService(mockReviewRepository, mockProductService, mockUserService, mockReviewMapper, productRepository, mockProductMapper);
+        reviewServiceUnderTest = new ReviewService(mockReviewRepository, mockProductService, mockUserService, mockReviewMapper, productRepository, mockProductMapper, entityManager);
     }
 
     @Test
-    void testCreateReview() {
+    void testCreateReview() throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
 
         Product product = new Product();
         product.setId(1L);
