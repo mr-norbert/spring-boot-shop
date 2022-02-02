@@ -23,7 +23,7 @@ public class MyUserDetails extends User implements UserDetails {
         }
     }
 
-    private final Set<GrantedAuthority> authorities = new HashSet<GrantedAuthority>();
+    private final Set<GrantedAuthority> authorities = new HashSet<>();
 
     @Override
     public Collection<GrantedAuthority> getAuthorities() {
@@ -31,35 +31,7 @@ public class MyUserDetails extends User implements UserDetails {
     }
 
     @Override
-    public String getUsername() { return getEmail(); }
-
-    @Override
-    public String getEmail() {
-        return super.getEmail();
-    }
-
-    @Override
-    public String getPassword() {
-        return super.getPassword();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return super.isAccountNonLocked();
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return super.isCredentialsNonExpired();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return super.isEnabled();
+    public String getUsername() {
+        return null;
     }
 }

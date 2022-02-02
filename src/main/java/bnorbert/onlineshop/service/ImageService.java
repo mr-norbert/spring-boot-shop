@@ -124,8 +124,8 @@ public class ImageService implements FileStorageService{
         try (ZooModel<ai.djl.modality.cv.Image, DetectedObjects> model = criteria.loadModel();
              Predictor<ai.djl.modality.cv.Image, DetectedObjects> predictor = model.newPredictor()) {
             DetectedObjects detection = predictor.predict(img);
-            System.err.println(detection.best().getClassName().toLowerCase());
-            System.err.println(detection.best().getProbability());
+            log.info(detection.best().getClassName().toLowerCase());
+            log.info(String.valueOf(detection.best().getProbability()));
             saveBoundingBoxImage(img, detection);
 
             Map<String, String> words = new TreeMap<>();

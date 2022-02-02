@@ -120,14 +120,14 @@ class UserServiceTest {
         request.setVerificationToken("v4457eab5");
 
         final Optional<VerificationToken> verificationToken = Optional.of(new VerificationToken(user));
-        when(mockVerificationTokenRepository.findByVerificationToken("v4457eab5")).thenReturn(verificationToken);
+        when(mockVerificationTokenRepository.findByToken("v4457eab5")).thenReturn(verificationToken);
 
         when(mockUserRepository.save(user)).thenReturn(user);
 
         final UserResponse result = userServiceUnderTest.confirmUser(request);
 
         verify(mockUserRepository).save(user);
-        verify(mockVerificationTokenRepository).findByVerificationToken(isNotNull());
+        verify(mockVerificationTokenRepository).findByToken(isNotNull());
     }
 
     @Test
@@ -188,7 +188,7 @@ class UserServiceTest {
         request.setVerificationToken("12324");
 
         Optional<VerificationToken> verificationToken = Optional.of(new VerificationToken(user));
-        when(mockVerificationTokenRepository.findByVerificationToken("12324")).thenReturn(verificationToken);
+        when(mockVerificationTokenRepository.findByToken("12324")).thenReturn(verificationToken);
 
         when(mockPasswordEncoder.encode("password")).thenReturn("");
         when(mockUserRepository.save(user)).thenReturn(user);

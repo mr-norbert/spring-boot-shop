@@ -125,14 +125,14 @@ public class PantryService {
 
         }
 
-        String[] HEADERS = createCSVFile(multiValuedMap);
+        String[] headers = createCSVFile(multiValuedMap);
 
-        readCSVFile(HEADERS);
+        readCSVFile(headers);
 
 
     }
 
-    private void readCSVFile(String[] HEADERS) throws IOException {
+    private void readCSVFile(String[] headers) throws IOException {
         Reader reader = new FileReader("src/main/resources/test.csv");
 
         List<Pantry> pantries = Stream
@@ -142,13 +142,13 @@ public class PantryService {
 
         Iterable<CSVRecord> records =
                 CSVFormat.DEFAULT
-                        .withHeader(HEADERS)
+                        .withHeader(headers)
                         .withFirstRecordAsHeader()
                         .parse(reader);
 
-        for (CSVRecord record : records) {
-            String columnOne = record.get(0);
-            String columnTwo = record.get(1);
+        for (CSVRecord csvRecord : records) {
+            String columnOne = csvRecord.get(0);
+            String columnTwo = csvRecord.get(1);
 
             long pantryId = Long.parseLong(columnOne);
             long recommendedId = Long.parseLong(columnTwo);
@@ -171,14 +171,14 @@ public class PantryService {
 
 
     private String[] createCSVFile(MultiValuedMap<Long, Long> multiValuedMap) throws IOException {
-        String[] HEADERS = {"id", "recommendedId"};
+        String[] headers = {"id", "recommendedId"};
 
         FileWriter fileWriter = new FileWriter("src/main/resources/test.csv");
 
         try (CSVPrinter printer = new CSVPrinter(
                 fileWriter,
                 CSVFormat.DEFAULT
-                        .withHeader(HEADERS) ))   {
+                        .withHeader(headers) ))   {
 
             for (Map.Entry<Long, Long> entry : multiValuedMap.entries()){
                 try {
@@ -189,7 +189,7 @@ public class PantryService {
             }
 
         }
-        return HEADERS;
+        return headers;
     }
 
 

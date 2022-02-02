@@ -23,7 +23,7 @@ import java.util.Optional;
 @Slf4j
 public class CartService {
 
-    private static final String secretKey = "";
+    //private static final String secretKey = "";
 
     private final CartRepository cartRepository;
     private final UserService userService;
@@ -143,19 +143,6 @@ public class CartService {
         return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
 
     }
-
-    private boolean containsIds(List<CartItem> list, long cart_id, long product_id){
-        //return list.stream().anyMatch(cartItem ->
-        //                cartItem.getCart().getId().equals(cart_id)
-        //                        && cartItem.getProduct().getId().equals(product_id));
-
-        return list.stream()
-                .filter(cartItem ->
-                        cartItem.getCart().getId().equals(cart_id) &&
-                                cartItem.getProduct().getId().equals(product_id))
-                .findFirst().isPresent();
-    }
-
 
     public void clearCart(Cart cart) {
         List<CartItem> cartItemList = cartItemRepository.findByCart(cart);

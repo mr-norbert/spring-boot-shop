@@ -58,10 +58,10 @@ public class UserServiceIntegrationTests {
 
         String token = "4457eab5";
 
-        VerificationToken verificationToken = verificationTokenRepository.findByVerificationToken(token).orElse(null);
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token).orElse(null);
 
         assertThat(verificationToken, notNullValue());
-        assertEquals(verificationToken.getVerificationToken(), token);
+        assertEquals(verificationToken.getToken(), token);
     }
 
     @Test
@@ -152,10 +152,10 @@ public class UserServiceIntegrationTests {
 
         String token = "2370ae1";
 
-        VerificationToken verificationToken = verificationTokenRepository.findByVerificationToken(token).orElse(null);
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token).orElse(null);
 
         assertThat(verificationToken, notNullValue());
-        assertEquals(verificationToken.getVerificationToken(), token);
+        assertEquals(verificationToken.getToken(), token);
 
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setVerificationToken(token);
@@ -183,7 +183,7 @@ public class UserServiceIntegrationTests {
 
         UserResponse userResponse = userService.resendToken(request);
 
-        assertThat(verificationToken.getVerificationToken(), notNullValue());
+        assertThat(verificationToken.getToken(), notNullValue());
         assertThat(userResponse.getId(), notNullValue());
         assertThat(user.getId(), notNullValue());
 

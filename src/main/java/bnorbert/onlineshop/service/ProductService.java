@@ -22,6 +22,8 @@ import bnorbert.onlineshop.transfer.search.SearchRequest;
 import bnorbert.onlineshop.transfer.search.SearchResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.search.engine.search.aggregation.AggregationKey;
+import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
+import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.engine.search.query.SearchResultTotal;
 import org.hibernate.search.engine.search.sort.dsl.SortOrder;
@@ -57,6 +59,11 @@ public class ProductService {
     private static final String FIELD_PRICE = "price";
     private static final String FIELD_NAME = "name";
     private static final String IS_AVAILABLE_FIELD = "isAvailable";
+
+    private static final String COUNT_BY_PRICE = "countsByPrice";
+    private static final String COUNT_BY_COLOR = "countsByColor";
+    private static final String COUNT_BY_CATEGORY = "countsByCategory";
+    private static final String COUNT_BY_BRAND = "countsByBrand";
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
@@ -103,7 +110,7 @@ public class ProductService {
     }
 
     public ProductResponse bindThem(Long productId) {
-        System.err.println("Retrieving product: " + productId);
+        log.info("Retrieving product: " + productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(""));
 
@@ -138,7 +145,7 @@ public class ProductService {
     }
 
     public void christmasQuery() {
-        System.err.println("Retrieving products");
+        log.info("Retrieving products");
         SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
         SearchResult<Product> searchResult = searchSession.search(Product.class)
                 .where(f -> f.match()
@@ -241,22 +248,22 @@ public class ProductService {
 
         try (ZooModel<QAInput, String> model = criteria.loadModel()) {
             try (Predictor<QAInput, String> predictor = model.newPredictor()) {
-                System.err.println(predictor.predict(input));
+                log.info(predictor.predict(input));
                 return predictor.predict(input);
             }
         }
     }
 
-    public <T> HibernateSearchResponse getSearchBar(String input, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
+    public HibernateSearchResponse getSearchBar(String input, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
         log.info("Retrieving products. sortType : {} ", sortType);
 
         try {
             SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
 
-            AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of( "countsByPrice" );
-            AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of( "countsByColor" );
-            AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of( "countsByCategory" );
-            AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of( "countsByBrand" );
+            AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of( COUNT_BY_PRICE );
+            AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of( COUNT_BY_COLOR );
+            AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of( COUNT_BY_CATEGORY );
+            AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of( COUNT_BY_BRAND );
 
             SearchResult<Product> result = searchSession.search(Product.class)
                     .where(f -> f.bool(b -> {
@@ -286,10 +293,10 @@ public class ProductService {
 
                         switch (sortType) {
                             case PRICE_ASC:
-                                b.add(f.field("price").order(SortOrder.ASC));
+                                b.add(f.field(FIELD_PRICE).order(SortOrder.ASC));
                                 break;
                             case PRICE_DESC:
-                                b.add(f.field("price").order(SortOrder.DESC));
+                                b.add(f.field(FIELD_PRICE).order(SortOrder.DESC));
                                 break;
                             case ID_ASC:
                                 b.add(f.field("id").order(SortOrder.ASC));
@@ -319,9 +326,9 @@ public class ProductService {
                     .fetch(pageNumber * 4, 4);
 
 
-            SearchResultTotal resultTotal = result.total();
+            //SearchResultTotal resultTotal = result.total();
             long totalHitCount = result.total().hitCount();
-            boolean hitCountExact = resultTotal.isHitCountExact();
+            //boolean hitCountExact = resultTotal.isHitCountExact();
 
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
@@ -341,7 +348,7 @@ public class ProductService {
                             (response, pageable, totalHitCount)).orElseThrow(() -> new ResourceNotFoundException("")));
 
         }catch (SearchTimeoutException ignored){
-            System.err.println("SearchTimeout " + getClientIP());
+            log.debug("SearchTimeout " + getClientIP());
         }
 
         Map<Range<Double>, Long> price = new HashMap<>();
@@ -356,88 +363,27 @@ public class ProductService {
     }
 
 
-    public <T> HibernateSearchResponse getSearchBox(SearchRequest request, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
+    public HibernateSearchResponse getSearchBox(SearchRequest request, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
         log.info("Retrieving products. sortType : {} ", sortType);
 
         try {
             SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
 
-            AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of( "countsByPrice" );
-            AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of( "countsByColor" );
-            AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of( "countsByCategory" );
-            AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of( "countsByBrand" );
+            AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of( COUNT_BY_PRICE );
+            AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of( COUNT_BY_COLOR );
+            AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of( COUNT_BY_CATEGORY );
+            AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of( COUNT_BY_BRAND );
 
             SearchResult<Product> result = searchSession.search(Product.class)
-                    .where(f -> f.bool(b -> {
-
-                        if (request.getPrice() != null && request.getPriceMax() != null) {
-                            b.must(f.range()
-                                    .field(FIELD_PRICE)
-                                    .between(request.getPrice(), request.getPriceMax()));
-                            b.must(f.match()
-                                    .field(IS_AVAILABLE_FIELD)
-                                    .matching(true));
-                        }
-
-                        if (request.getCategoryName() != null) {
-                            b.must(f.match()
-                                    .field(FIELD_CATEGORY)
-                                    .matching(request.getCategoryName().toLowerCase()));
-                            b.must(f.match()
-                                    .field(IS_AVAILABLE_FIELD)
-                                    .matching(true));
-                        }
-
-                        if (request.getBrandName() != null) {
-                            b.must(f.match()
-                                    .field(FIELD_BRAND)
-                                    .matching(request.getBrandName().toLowerCase()));
-                            b.must(f.match()
-                                    .field(IS_AVAILABLE_FIELD)
-                                    .matching(true));
-                        }
-
-                        if (request.getColor() != null) {
-                            b.must(f.match()
-                                    .field(FIELD_COLOR)
-                                    .matching(request.getColor().toLowerCase()));
-                            b.must(f.match()
-                                    .field(IS_AVAILABLE_FIELD)
-                                    .matching(true));
-                        }
-
-                        if (request.getQuery() != null) {
-                            String userIp = getClientIP();
-                            b.must(f.match()
-                                            .field(FIELD_NAME)
-                                            .matching(request.getQuery().toLowerCase()))
-                                    .boost(2.0f);
-
-                            b.must(f.match()
-                                    .field(IS_AVAILABLE_FIELD)
-                                    .matching(true));
-
-                            Query newQuery = new Query();
-                            Optional<Query> query = queriesRepository.findByUserIpAndQuery(userIp, request.getQuery().toLowerCase());
-                            if(query.isPresent()){
-                                query.get().incrementHits();
-                                queriesRepository.save(query.get());
-                            }else {
-                                newQuery.setQuery(request.getQuery().toLowerCase());
-                                newQuery.setHits(1);
-                                newQuery.setUserIp(userIp);
-                                queriesRepository.save(newQuery);
-                            }
-                        }
-                    }))
+                    .where(f -> f.bool(b -> myRequest(request, f, b)))
                     .sort(f -> f.composite(b -> {
 
                         switch (sortType) {
                             case PRICE_ASC:
-                                b.add(f.field("price").order(SortOrder.ASC));
+                                b.add(f.field(FIELD_PRICE).order(SortOrder.ASC));
                                 break;
                             case PRICE_DESC:
-                                b.add(f.field("price").order(SortOrder.DESC));
+                                b.add(f.field(FIELD_PRICE).order(SortOrder.DESC));
                                 break;
                             case ID_ASC:
                                 b.add(f.field("id").order(SortOrder.ASC));
@@ -489,7 +435,7 @@ public class ProductService {
                             (response, pageable, totalHitCount)).orElseThrow(() -> new ResourceNotFoundException("")));
 
         }catch (SearchTimeoutException ignored){
-            System.err.println("SearchTimeout " + getClientIP());
+            log.debug("SearchTimeout " + getClientIP());
         }
 
         Map<Range<Double>, Long> price = new HashMap<>();
@@ -501,6 +447,68 @@ public class ProductService {
         return new HibernateSearchResponse(price, color, category, brand,
                 Optional.of(mockResponse).map(search -> new PageImpl<>
                         (mockResponse, pageable, 0)).orElseThrow(() -> new ResourceNotFoundException("")));
+    }
+
+    private void myRequest(SearchRequest request, SearchPredicateFactory predicateFactory, BooleanPredicateClausesStep<?> booleanPredicateClausesStep) {
+        if (request.getPrice() != null && request.getPriceMax() != null) {
+            booleanPredicateClausesStep.must(predicateFactory.range()
+                    .field(FIELD_PRICE)
+                    .between(request.getPrice(), request.getPriceMax()));
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(IS_AVAILABLE_FIELD)
+                    .matching(true));
+        }
+
+        if (request.getCategoryName() != null) {
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(FIELD_CATEGORY)
+                    .matching(request.getCategoryName().toLowerCase()));
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(IS_AVAILABLE_FIELD)
+                    .matching(true));
+        }
+
+        if (request.getBrandName() != null) {
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(FIELD_BRAND)
+                    .matching(request.getBrandName().toLowerCase()));
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(IS_AVAILABLE_FIELD)
+                    .matching(true));
+        }
+
+        if (request.getColor() != null) {
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(FIELD_COLOR)
+                    .matching(request.getColor().toLowerCase()));
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(IS_AVAILABLE_FIELD)
+                    .matching(true));
+        }
+
+        if (request.getQuery() != null) {
+            String userIp = getClientIP();
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                            .field(FIELD_NAME)
+                            .matching(request.getQuery().toLowerCase()))
+                    .boost(2.0f);
+
+            booleanPredicateClausesStep.must(predicateFactory.match()
+                    .field(IS_AVAILABLE_FIELD)
+                    .matching(true));
+
+            Query newQuery = new Query();
+            Optional<Query> query = queriesRepository.findByUserIpAndQuery(userIp, request.getQuery().toLowerCase());
+            if(query.isPresent()){
+                query.get().incrementHits();
+                queriesRepository.save(query.get());
+            }else {
+                newQuery.setQuery(request.getQuery().toLowerCase());
+                newQuery.setHits(1);
+                newQuery.setUserIp(userIp);
+                queriesRepository.save(newQuery);
+            }
+        }
     }
 
     public SearchResponse findMatches(MatchesEnum e1, MatchesEnum2 e2,
@@ -519,9 +527,7 @@ public class ProductService {
     }
 
     private void containsSpecs(int specification, int secondSpec) {
-        if (!inRange(specification)){
-            throw new IllegalStateException("");
-        }else if(!inRange(secondSpec)){
+        if (!inRange(specification) && !inRange(secondSpec)){
             throw new IllegalStateException("");
         }
     }
@@ -532,54 +538,20 @@ public class ProductService {
         double pClosestProduct;
         double pClosestProductSpecs;
         double pSpecsClosestProduct;
+        extractQuery(name);
 
-        String userIp = getClientIP();
-        Query newQuery = new Query();
-        Optional<Query> query = queriesRepository.findByUserIpAndQuery(userIp, name.toLowerCase());
-        if(query.isPresent()){
-            query.get().incrementHits();
-            queriesRepository.save(query.get());
-        }else {
-            newQuery.setQuery(name.toLowerCase());
-            newQuery.setHits(1);
-            newQuery.setUserIp(userIp);
-            queriesRepository.save(newQuery);
-        }
-
-        List<Product> products = productRepository.findProductsByCategoryNameContaining(categoryName);
+        List<Product> products = productRepository.findProductsByCategoryNameContaining(categoryName.toLowerCase());
         List<Product> listOfGoodies = new ArrayList<>();
         Map<Long, Double> distanceMap = new HashMap<>();
         List<Product> resultsList = new ArrayList<>();
 
-        CustomForEach.forEach(products, (product, breaker) -> {
-            double distance = euclideanDistance(selectedSpecs, product);
-            double euclideanLimit = 3;
-            System.out.println(distance + " euclidean distance  -  " + product.getId());
-            if (distance > euclideanLimit) {
-                breaker.carryOn();
-            } else {
-                resultsList.add(product);
-                distanceMap.put(product.getId(), distance);
-            }
-
-        });
-
-        CustomForEach.forEach(products, (_product, breaker) -> {
-            double cosineDistance = 1.0 - cosineSimilarity(selectedSpecs, _product);
-            System.out.println(cosineDistance + " cosine distance  -  " +_product.getId());
-            if (cosineDistance > 0.3) {
-                breaker.carryOn();
-            } else {
-                listOfGoodies.add(_product);
-            }
-
-        });
+        getDistance(selectedSpecs, products, listOfGoodies, distanceMap, resultsList);
 
         //List<Product> names = filterProducts(resultsList, ( Product p ) -> p.getName().startsWith(name));
         //List<Product> productsInStock = filterProducts( names, ProductService::isAvailable);
 
         List<Predicate<Product>> predicates = new ArrayList<>();
-        predicates.add( p -> p.getName().startsWith(name));
+        predicates.add( p -> p.getName().startsWith(name.toLowerCase()));
         predicates.add( p -> p.getIsAvailable().equals(true));
 
         List<Long> idList = //productsInStock
@@ -597,13 +569,13 @@ public class ProductService {
                 .stream()
                 .map(Product::getId)
                 .collect(Collectors.toCollection(ArrayList::new));
-        System.out.println("listOfGoodies: "+ list);
+        log.info("listOfGoodies: "+ list);
 
         SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
-        AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of("countsByPrice");
-        AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of("countsByColor");
-        AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of("countsByCategory");
-        AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of("countsByBrand");
+        AggregationKey<Map<Range<Double>, Long>> countsByPriceKey = AggregationKey.of(COUNT_BY_PRICE);
+        AggregationKey<Map<String, Long>> countsByColorKey = AggregationKey.of(COUNT_BY_COLOR);
+        AggregationKey<Map<String, Long>> countsByCategoryKey = AggregationKey.of(COUNT_BY_CATEGORY);
+        AggregationKey<Map<String, Long>> countsByBrandKey = AggregationKey.of(COUNT_BY_BRAND);
 
         SearchResult<Product> hits = searchSession.search(Product.class)
                 .where(f -> f.id()
@@ -613,10 +585,10 @@ public class ProductService {
 
                                     switch (sortType) {
                                         case PRICE_ASC:
-                                            b.add( f.field("price").order(SortOrder.ASC));
+                                            b.add( f.field(FIELD_PRICE).order(SortOrder.ASC));
                                             break;
                                         case PRICE_DESC:
-                                            b.add( f.field("price").order(SortOrder.DESC));
+                                            b.add( f.field(FIELD_PRICE).order(SortOrder.DESC));
                                             break;
                                         case ID_ASC:
                                             b.add( f.field("id").order(SortOrder.ASC));
@@ -624,7 +596,7 @@ public class ProductService {
                                         case ID_DESC:
                                             b.add( f.field("id").order(SortOrder.DESC));
                                             break;
-                                        //default:throw new IllegalArgumentException();
+                                        default:throw new IllegalArgumentException();
                                     }
                                 }
                         ))
@@ -648,7 +620,7 @@ public class ProductService {
         Map<String, Long> countsByCategory = hits.aggregation( countsByCategoryKey);
         Map<String, Long> countsByBrand = hits.aggregation( countsByBrandKey);
 
-        List<Product> responseList = hits.hits();
+        List<Product> response = hits.hits();
 
         //P(specifications) the probability of having these required specifications
         pSpecs = ( products.size() * 1.0) / (( products.size() * 1.0) * 2);
@@ -660,30 +632,29 @@ public class ProductService {
         pSpecsClosestProduct = ( pSpecs * pClosestProductSpecs / pClosestProduct) * 100;
 
         DecimalFormat decimalFormat = new DecimalFormat("0.#");
-        System.out.println("The probability that these products with this specifications are the closest is: "
+        log.info("The probability that these products with this specifications are the closest is: "
                 +decimalFormat.format( pSpecsClosestProduct)+ "%");
 
         Map<Long, Double> sortedMap = sortByValue(distanceMap);
         Set<Long> idSet = new LinkedHashSet<>(sortedMap.keySet());
-        List<Product> customResponse = new ArrayList<>();
+        List<Product> sortedResponse = new ArrayList<>();
 
         for (Long productId : idSet) {
             Product product = getProduct(productId);
             if(product.getId().equals(productId)){
-                customResponse.add(product);
+                sortedResponse.add(product);
             }
         }
 
-
         if (sortType == ProductSortTypeEnum.CUSTOM) {
             return new SearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand,
-                    productMapper.entitiesToEntityDTOs(customResponse));
+                    productMapper.entitiesToEntityDTOs(sortedResponse));
         }
 
         if (sortType == ProductSortTypeEnum.PAGE) {
             int count = pageNumber * 2;
             List<Product> paged = Optional
-                    .of(customResponse
+                    .of(sortedResponse
                             .stream()
                             .skip(count)
                             .limit(2)
@@ -711,17 +682,58 @@ public class ProductService {
             List<String> sweeper = group.stream()
                     .filter(identity::contains).collect(Collectors.toList());
             if(!sweeper.isEmpty()){
-                //Collections.shuffle(customResponse);
-                Collections.rotate(customResponse, customResponse.size() / 2);
+                //Collections.shuffle(sortedResponse);
+                Collections.rotate(sortedResponse, sortedResponse.size() / 2);
 
             }
-
             return new SearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand,
-                    productMapper.entitiesToEntityDTOs(customResponse));
+                    productMapper.entitiesToEntityDTOs(sortedResponse));
         }
 
         return new SearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand,
-                productMapper.entitiesToEntityDTOs(responseList));
+                productMapper.entitiesToEntityDTOs(response));
+    }
+
+    private void extractQuery(String name) {
+        String userIp = getClientIP();
+        Query newQuery = new Query();
+        Optional<Query> query = queriesRepository.findByUserIpAndQuery(userIp, name.toLowerCase());
+        if(query.isPresent()){
+            query.get().incrementHits();
+            queriesRepository.save(query.get());
+        }else {
+            newQuery.setQuery(name.toLowerCase());
+            newQuery.setHits(1);
+            newQuery.setUserIp(userIp);
+            queriesRepository.save(newQuery);
+        }
+    }
+
+    private void getDistance(Product selectedSpecs, List<Product> products, List<Product> listOfGoodies,
+                             Map<Long, Double> distanceMap, List<Product> resultsList) {
+        CustomForEach.forEach(products, (product, breaker) -> {
+            double distance = euclideanDistance(selectedSpecs, product);
+            double euclideanLimit = 3;
+            System.err.println(distance + " euclidean distance  -  " + product.getId());
+            if (distance > euclideanLimit) {
+                breaker.carryOn();
+            } else {
+                resultsList.add(product);
+                distanceMap.put(product.getId(), distance);
+            }
+
+        });
+
+        CustomForEach.forEach(products, (_product, breaker) -> {
+            double cosineDistance = 1.0 - cosineSimilarity(selectedSpecs, _product);
+            System.err.println(cosineDistance + " cosine distance  -  " +_product.getId());
+            if (cosineDistance > 0.3) {
+                breaker.carryOn();
+            } else {
+                listOfGoodies.add(_product);
+            }
+
+        });
     }
 
     private Map<Long, Double> sortByValue(Map<Long, Double> map) {
@@ -765,7 +777,7 @@ public class ProductService {
     }
 
     private double cosineSimilarity(Product x1, Product x2) {
-        double a = x1.getSpecification() * x2.getSpecification() + x1.getSecondSpec() * x2.getSecondSpec();
+        double a = (double)x1.getSpecification() * (double)x2.getSpecification() + (double)x1.getSecondSpec() * (double)x2.getSecondSpec();
 
         double b = Math.sqrt( Math.pow( x1.getSpecification(), 2) + Math.pow( x2.getSpecification(), 2))
                 * Math.sqrt( Math.pow( x1.getSecondSpec(), 2) + Math.pow( x2.getSecondSpec(), 2));
@@ -784,6 +796,9 @@ public class ProductService {
 
 class CustomForEach {
 
+    private CustomForEach(){
+        throw new ResourceNotFoundException("Utility class");
+    }
     public static class Breaker {
         private boolean shouldBreak = false;
 
@@ -811,9 +826,7 @@ class CustomForEach {
         Breaker breaker = new Breaker();
 
         while (hadNext && !breaker.get()) {
-            hadNext = spliterator.tryAdvance(elem -> {
-                consumer.accept(elem, breaker);
-            });
+            hadNext = spliterator.tryAdvance(elem -> consumer.accept(elem, breaker));
         }
 
         //split.forEachRemaining(e -> {

@@ -3,6 +3,7 @@ package bnorbert.onlineshop.service;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 public class LoginAttemptService {
 
     private final LoadingCache<String, Integer> attemptsCache;
@@ -80,7 +82,7 @@ public class LoginAttemptService {
             double elapsedTime = (end - start);
             method.releaseConnection();
 
-            System.err.println("Elapsed time : " + elapsedTime);
+            log.info("Elapsed time : " + elapsedTime);
         } catch(Exception e){
             e.printStackTrace();
         }

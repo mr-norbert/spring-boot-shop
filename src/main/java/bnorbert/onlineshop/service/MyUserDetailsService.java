@@ -34,7 +34,7 @@ public class MyUserDetailsService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-
+        log.info("load {}", email);
         String ip = getClientIP();
         if (loginAttemptService.isBlocked(ip)) {
             log.info("blocked: {}", ip);
@@ -42,19 +42,21 @@ public class MyUserDetailsService implements UserDetailsService {
         }
         try {
             return getUserDetails(email);
-        } catch (Exception e) {
-            throw new RuntimeException(e.toString());
+        } catch (RuntimeException e) {
+            throw new ResourceNotFoundException(email + " not found!");
         }
     }
 
     private UserDetails getUserDetails(String email) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        userOptional.orElseThrow(() -> new ResourceNotFoundException("Invalid email"));
+        Optional<User> user = userRepository.findByEmail(email);
 
-        UserDetails userDetails = new MyUserDetails(userOptional.get());
-        new AccountStatusUserDetailsChecker().check(userDetails);
-
-        return userDetails;
+        if(user.isPresent()) {
+            UserDetails userDetails = new MyUserDetails(user.get());
+            new AccountStatusUserDetailsChecker().check(userDetails);
+            return userDetails;
+        } else {
+            throw new ResourceNotFoundException("Invalid email");
+        }
     }
 
     private String getClientIP() {

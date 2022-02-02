@@ -17,7 +17,7 @@ public class VerificationToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    private String verificationToken;
+    private String token;
     private LocalDateTime createdDate;
     private LocalDateTime expirationDate;
 
@@ -26,7 +26,7 @@ public class VerificationToken {
 
     public VerificationToken(User user) {
         this.user = user;
-        verificationToken = Base64.getUrlEncoder().withoutPadding().toString()
+        token = Base64.getUrlEncoder().withoutPadding().toString()
                 .replace("java.util.Base64$Encoder@", "");
         createdDate = LocalDateTime.now();
         expirationDate = LocalDateTime.now().plusMinutes(5);

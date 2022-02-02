@@ -114,7 +114,7 @@ public class UserService {
     @Transactional
     public UserResponse confirmUser(VerifyTokenRequest request) {
         VerificationToken verificationToken = verificationTokenRepository
-                .findByVerificationToken(request.getVerificationToken())
+                .findByToken(request.getVerificationToken())
                 .orElseThrow(() ->
                         new ResourceNotFoundException
                                 ("Token " + request.getVerificationToken() + " not found."));
@@ -163,7 +163,7 @@ public class UserService {
     public UserResponse resetPassword(ResetPasswordRequest request) {
         LOGGER.info("Changing password for user {}", request);
         VerificationToken verificationToken = verificationTokenRepository
-                .findByVerificationToken
+                .findByToken
                         (request.getVerificationToken()).orElseThrow(() ->
                         new ResourceNotFoundException
                                 ("Token " + request.getVerificationToken() + " not found."));
@@ -188,25 +188,24 @@ public class UserService {
 
 
     public AuthResponse login(String email, String password) {
+        LOGGER.info("Login : {}", email);
+        Authentication authenticate = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(email, password));
+
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(authenticate);
+        String authToken = jwtProvider
+                .generateToken(authenticate);
+
         long endTime = System.nanoTime() + TimeUnit.NANOSECONDS.convert(10L, TimeUnit.SECONDS);
-        while (System.nanoTime() < endTime) {
-
-            Authentication authenticate = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken
-                            (email, password));
-
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authenticate);
-            String authToken = jwtProvider
-                    .generateToken(authenticate);
-
+        if (System.nanoTime() < endTime) {
             return new AuthResponse(authToken, email);
+        } else {
+            String frontToken = "3h*354-75c5#!-49b2##-a890Oa-2eb344";
+            String message = Long.toString(endTime);
+            return new AuthResponse(frontToken, message);
         }
-        String front_token = "3h*354-75c5#!-49b2##-a890Oa-2eb344";
-        String message = Long.toString(endTime);
-
-        return new AuthResponse(front_token, message);
     }
 
 

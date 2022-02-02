@@ -183,7 +183,7 @@ public class OrderService {
         });
     }
 
-    public <T> OrdersResponses getOrders(OrderRequest request, String query, Pageable pageable, OrderTypeEnum orderType, int pageNumber) {
+    public OrdersResponses getOrders(OrderRequest request, String query, Pageable pageable, OrderTypeEnum orderType, int pageNumber) {
         log.info("Retrieving orders");
         long numberOfDocs = orderRepository.count();
         String[] words = query.split(" ");
@@ -207,7 +207,7 @@ public class OrderService {
                 docLengthAvr = length.stream()
                         .mapToDouble(Integer::doubleValue)
                         .average().orElse(1.0);
-                termFrequency = (double)wordCount / docLengthAvr;
+                termFrequency = wordCount / docLengthAvr;
                 double TF_IDF = termFrequency * inverseDocumentFrequency;
 
                 hashMap.put(doc, hashMap.getOrDefault(doc, (double) 0) + TF_IDF);
@@ -215,7 +215,7 @@ public class OrderService {
         }
 
         Map<Long, Double> sortedMap = sortByValueReversed(hashMap);
-        System.err.println(sortedMap + " sortedmap");
+        log.info(sortedMap + " sortedmap");
 
         Set<Long> idSet = new LinkedHashSet<>(sortedMap.keySet());
         List<Order> result = new ArrayList<>();
@@ -225,16 +225,22 @@ public class OrderService {
                 result.add(order);
             }
         }else {
-            throw new ResourceNotFoundException("");
+            throw new ResourceNotFoundException("empty list" );
         }
 
+        return getOrdersResponses(request, pageable, orderType, pageNumber, idSet, result);
+    }
+
+    private OrdersResponses getOrdersResponses(OrderRequest request, Pageable pageable,
+                                               OrderTypeEnum orderType, int pageNumber,
+                                               Set<Long> idSet, List<Order> result) {
         if (orderType == OrderTypeEnum.BETWEEN) {
-            SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
+            SearchSession searchSession = Search.session(entityManager);
             SearchResult<Order> searchResult = searchSession.search(Order.class)
                     .where(f -> f.bool(b -> {
                         b.must(f.id()
                                 .matchingAny(idSet));
-                        if (request.getYear() != null && request.getMonth() != null && request.getDay() != null &&
+                        if (request != null && request.getYear() != null && request.getMonth() != null && request.getDay() != null &&
                                 request.get_year() != null && request.get_month() != null && request.get_day() != null) {
                             b.must(f.range()
                                     .field("createdDate")
@@ -243,29 +249,29 @@ public class OrderService {
                         }
                     })).fetch(pageNumber * 4, 4);
 
-            List<Order> search_result = searchResult.hits();
+            List<Order> orders = searchResult.hits();
             long totalHitCount = searchResult.total().hitCount();
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
                 throw new ResourceNotFoundException("");
             }
 
-            List<OrderResponse> _response = orderMapper.entitiesToDTOs(search_result);
+            List<OrderResponse> response = orderMapper.entitiesToDTOs(orders);
 
-            return new OrdersResponses(Optional.of(_response)
-                    .map(search -> new PageImpl<>(_response, pageable, totalHitCount))
+            return new OrdersResponses(Optional.of(response)
+                    .map(search -> new PageImpl<>(response, pageable, totalHitCount))
                     .orElseThrow(() -> new ResourceNotFoundException("")));
         }
 
         if (orderType == OrderTypeEnum.TEST) {
-            SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
+            SearchSession searchSession = Search.session(entityManager);
             SearchResult<Order> searchResult = searchSession.search(Order.class)
                     .where(f -> f.bool(b -> {
                         b.must(f.id()
                                 .matchingAny(idSet));
                         b.must(f.match()
                                 .field("status")
-                                .matching(OrderStatusEnum.TEST));
+                                .matching(OrderStatusEnum.COMPLETED));
 
                     })).fetch(4 * pageNumber, 4);
 
@@ -275,10 +281,10 @@ public class OrderService {
             if(pageNumber > lastPage){
                 throw new ResourceNotFoundException("");
             }
-            List<OrderResponse> _response = orderMapper.entitiesToDTOs(orders);
+            List<OrderResponse> response = orderMapper.entitiesToDTOs(orders);
 
-            return new OrdersResponses(Optional.of(_response)
-                    .map(search -> new PageImpl<>(_response, pageable, totalHitCount))
+            return new OrdersResponses(Optional.of(response)
+                    .map(search -> new PageImpl<>(response, pageable, totalHitCount))
                     .orElseThrow(() -> new ResourceNotFoundException("")));
         }
 
@@ -297,10 +303,10 @@ public class OrderService {
         if(pageNumber > lastPage){
             throw new ResourceNotFoundException("");
         }
-        AtomicInteger page_number = new AtomicInteger(pageNumber);
+        AtomicInteger atomicInteger = new AtomicInteger(pageNumber);
         return new OrdersResponses(Optional.of(response)
                 .map(search -> new PageImpl<>
-                        (response.subList(pageNumber * pageSize, Math.min(page_number.incrementAndGet() * pageSize, response.size())), pageable, response.size()))
+                        (response.subList(pageNumber * pageSize, Math.min(atomicInteger.incrementAndGet() * pageSize, response.size())), pageable, response.size()))
                 .orElseThrow(() -> new ResourceNotFoundException("")));
     }
 

@@ -67,7 +67,7 @@ public class UserSteps {
 
         VerificationToken token = new VerificationToken();
         token.setUser(user);
-        token.setVerificationToken("b3679a");
+        token.setToken("b3679a");
         token.setCreatedDate(LocalDateTime.now());
         token.setExpirationDate(LocalDateTime.now().plusMinutes(3));
 

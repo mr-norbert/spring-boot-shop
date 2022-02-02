@@ -109,7 +109,7 @@ public class ReviewService {
                             .optProgress(new ProgressBar())
                             .build();
 
-            try (Model _model = Model.newInstance("AmazonReviewRatingClassification");
+            try (Model m = Model.newInstance("AmazonReviewRatingClassification");
                  ZooModel<NDList, NDList> embedding = criteria.loadModel()) {
                 DefaultVocabulary vocabulary =
                         DefaultVocabulary.builder()
@@ -117,28 +117,31 @@ public class ReviewService {
                                 .optUnknownToken("[UNK]")
                                 .build();
                 BertFullTokenizer tokenizer = new BertFullTokenizer(vocabulary, true);
-                _model.setBlock(getBlock(embedding.newPredictor()));
+                m.setBlock(getBlock(embedding.newPredictor()));
 
                 Path modelPath = Paths.get("src/main/resources/trained");
-                Model model = Model.newInstance("Mundi");
-                model.setBlock(getBlock(embedding.newPredictor()));
-                model.load(modelPath, "amazon-review.param");
+                try (Model model = Model.newInstance("Mundi")) {
+                    model.setBlock(getBlock(embedding.newPredictor()));
+                    model.load(modelPath, "amazon-review.param");
 
-                Predictor<String, Classifications> predictor = model.newPredictor(new MyTranslator(tokenizer));
-                Classifications classifications = predictor.predict(request.getContent().toLowerCase());
+                    try (Predictor<String, Classifications> predictor = model.newPredictor(new MyTranslator(tokenizer))) {
+                        Classifications classifications = predictor.predict(request.getContent().toLowerCase());
 
-                String best = classifications.best().getClassName();
-                int number;
-                try {
-                    number = Integer.parseInt(best);
-                    review.setPredictedRating(number);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
+                        String best = classifications.best().getClassName();
+                        int number;
+                        try {
+                            number = Integer.parseInt(best);
+                            review.setPredictedRating(number);
+                        } catch (NumberFormatException e) {
+                            e.printStackTrace();
+                        }
+
+                        review.setRatingProbability(classifications.best().getProbability() * 100d);
+                        sentimentAnalysis(request, product, review, classifications);
+
+                    }
+
                 }
-                review.setRatingProbability(classifications.best().getProbability() * 100d);
-
-                sentimentAnalysis(request, product, review, classifications);
-                model.close();
             }
             reviewRepository.save(review);
         }
@@ -147,7 +150,6 @@ public class ReviewService {
 
     private void sentimentAnalysis(CreateReviewRequest request, Product product, Review review, Classifications classifications) throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
 
-        //ExecutorService executorService = Executors.newFixedThreadPool(8);
         Criteria<String, Classifications> criteria =
                 Criteria.builder()
                         .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
@@ -196,12 +198,8 @@ public class ReviewService {
             bindThem(request, product, review, classifications, newClassifications);
 
         }
-        //finally{
-        //    executorService.shutdownNow();
-        //}
 
     }
-
 
     private void bindThem(CreateReviewRequest request, Product product, Review review, Classifications classifications, Classifications newClassifications) {
 
@@ -330,7 +328,6 @@ public class ReviewService {
     public Set<ProductResponse> findMatches(
             //CategoryEnum categoryEnum
     ) {
-
         List<Review> reviews = reviewRepository.findAll();
         /*
         List<Review> reviews = reviewRepository.findReviewsByProductCategoryName(categoryEnum.name().toLowerCase());
@@ -357,19 +354,19 @@ public class ReviewService {
 
         User currentUser = userService.getUser(userService.getCurrentUser().getId());
         long currentUserId = currentUser.getId();
-        double myTasteAverage;
+        //double myTasteAverage;
         double cosineSim;
         double cosineDist;
 
-        List<Review> reviewsByUserId = reviewRepository.findReviewsByUser_Id(currentUserId);
+        //List<Review> reviewsByUserId = reviewRepository.findReviewsByUser_Id(currentUserId);
         List<Product> products = productRepository.findAll();
 
-        myTasteAverage = reviewsByUserId
-                .stream()
-                .mapToDouble(Review::getRating)
-                .average().orElse(Double.NaN);
-                //.sum();
-        System.out.println(myTasteAverage);
+        //myTasteAverage = reviewsByUserId
+        //        .stream()
+        //        .mapToDouble(Review::getRating)
+        //        .average().orElse(Double.NaN);
+        //        //.sum();
+        //log.info(String.valueOf(myTasteAverage));
 
         Map<Long, Map<Long, Double>> trifecta = new HashMap<>();
         Map<Long, Double> sumOfValues = new HashMap<>();
@@ -405,7 +402,7 @@ public class ReviewService {
 
         sumOfValues.entrySet().parallelStream()
                 .forEach(entry ->
-                        entry.setValue(entry.getValue() / (double) trifecta.get(entry.getKey()).size()));
+                        entry.setValue(entry.getValue() / trifecta.get(entry.getKey()).size()));
 
         Iterator<Map.Entry<Long, Map<Long, Double>>> iterator = trifecta.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -424,7 +421,7 @@ public class ReviewService {
             AtomicReference<Double> c = new AtomicReference<>((double) 0);
 
             result.parallelStream()
-                    .forEach((productId) -> {
+                    .forEach(productId -> {
 
                         Map<Long, Double> map = myTaste.get(currentUserId);
                         Double _value = map.get(productId);
@@ -451,10 +448,31 @@ public class ReviewService {
             cosineSimilarity.put(_entry.getKey(), cosineSim);
             cosineDistance.put(_entry.getKey(), cosineDist);
 
-
         }
 
+        findMedian(customerReviews);
 
+        recommendProducts(products, trifecta, sumOfValues, predictions, cosineDistance);
+
+        Map<Long, Double> sortedPredictions = sortByValueReversed(predictions);
+        Map<Long, Double> limited = sortByValueReverseOrder(predictions);
+        log.info("Sorted predictions " + sortedPredictions );
+        log.info(String.valueOf(limited));
+
+        Set<Long> idSet = new LinkedHashSet<>(sortedPredictions.keySet());
+        Set<Product> response = new LinkedHashSet<>();
+
+        for (Long productId : idSet) {
+            Product product = productService.getProduct(productId);
+            if(product.getId().equals(productId)){
+                response.add(product);
+            }
+        }
+
+        return productMapper.entitiesToDTOs(response);
+    }
+
+    private void findMedian(Map<Long, List<Double>> customerReviews) {
         for(Map.Entry<Long, List<Double>> entry : customerReviews.entrySet()){
 
             MedianOfDoubleStream medianOfDoubleStream = new MedianOfDoubleStream();
@@ -469,7 +487,7 @@ public class ReviewService {
 
             double _median = listOfValues.size() % 2 == 0 ?
                     doubleStream
-                            .skip(listOfValues.size() / 2 - 1)
+                            .skip(listOfValues.size() / 2L - 1)
                             .limit(2)
                             .average()
                             .orElse(Double.NaN):
@@ -483,10 +501,16 @@ public class ReviewService {
             }
 
             median.put(entry.getKey(), medianOfDoubleStream.getMedian());
-
+            //log.debug(String.valueOf(_median));
+            //log.debug(String.valueOf(median));
         }
+    }
 
-
+    private void recommendProducts(List<Product> products,
+                           Map<Long, Map<Long, Double>> trifecta,
+                           Map<Long, Double> sumOfValues,
+                           Map<Long, Double> predictions,
+                           Map<Long, Double> cosineDistance) {
         int s = products.size();
         for(int j = 0; j < s ; j++) {
             Product product = products.get(j);
@@ -521,23 +545,6 @@ public class ReviewService {
             }
 
         }
-
-        Map<Long, Double> sortedPredictions = sortByValueReversed(predictions);
-        Map<Long, Double> limited = sortByValueReverseOrder(predictions);
-        System.err.println(sortedPredictions + " ****");
-        System.err.println(limited + " ****");
-
-        Set<Long> idSet = new LinkedHashSet<>(sortedPredictions.keySet());
-        Set<Product> response = new LinkedHashSet<>();
-
-        for (Long productId : idSet) {
-            Product product = productService.getProduct(productId);
-            if(product.getId().equals(productId)){
-                response.add(product);
-            }
-        }
-
-        return productMapper.entitiesToDTOs(response);
     }
 
     private Map<Long, Double> sortByValue(Map<Long, Double> map) {
@@ -555,9 +562,6 @@ public class ReviewService {
                                 LinkedHashMap::new));
     }
 
-
-
-
     private Map<Long, Double> sortByValueReversed(Map<Long, Double> map) {
 
         return map.entrySet()
@@ -569,7 +573,6 @@ public class ReviewService {
                         (oldValue, newValue) -> oldValue,
                         LinkedHashMap::new));
     }
-
 
     private Map<Long, Double> sortByValueReverseOrder(Map<Long, Double> map) {
         int elementsToReturn = 5;
@@ -630,7 +633,8 @@ public class ReviewService {
 
 class MedianOfDoubleStream {
 
-    private Queue<Double> minHeap, maxHeap;
+    private final Queue<Double> minHeap;
+    private final Queue<Double> maxHeap;
 
     MedianOfDoubleStream() {
         minHeap = new PriorityQueue<>();

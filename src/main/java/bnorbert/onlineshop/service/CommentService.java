@@ -50,19 +50,19 @@ public class CommentService {
     }
 
     @Transactional
-    public Page<CommentResponse> getCommentsByReview(Long review_id, Pageable pageable){
+    public Page<CommentResponse> getCommentsByReview(Long reviewId, Pageable pageable){
         log.info("Retrieving comments");
-        Page<Comment> comments = commentRepository.findByReview_Id(review_id, pageable);
+        Page<Comment> comments = commentRepository.findByReview_Id(reviewId, pageable);
         List<CommentResponse> commentResponses = commentMapper.entitiesToEntityDTOs(comments.getContent());
         return new PageImpl<>(commentResponses, pageable, comments.getTotalElements());
     }
 
 
     @Transactional
-    public Page<CommentResponse> getCommentsForReview(Long review_id, Integer page) {
+    public Page<CommentResponse> getCommentsForReview(Long reviewId, Integer page) {
         log.info("Retrieving comments #2");
-        Review review = reviewRepository.findById(review_id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review with id: " + review_id + "not found"));
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review with id: " + reviewId + "not found"));
         return commentRepository.findByReview(review, PageRequest.of(page, 8))
                 .map(commentMapper::mapToCommentResponse);
     }

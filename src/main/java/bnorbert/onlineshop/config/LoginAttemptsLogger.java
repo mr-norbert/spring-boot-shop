@@ -28,6 +28,9 @@ public class LoginAttemptsLogger implements AuditEventRepository {
     private final PersistenceAuditEventRepository persistenceAuditEventRepository;
     private final HttpServletRequest request;
     private static final int EVENT_DATA_COLUMN_MAX_LENGTH = 255;
+    private static final String AUTHENTICATION_SUCCESS = "AUTHENTICATION_SUCCESS";
+    private static final String AUTHENTICATION_FAILURE = "AUTHENTICATION_FAILURE";
+    private static final String AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE";
 
     /*
     @EventListener
@@ -56,14 +59,10 @@ public class LoginAttemptsLogger implements AuditEventRepository {
         return results;
     }
 
-
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void add(AuditEvent event) {
 
-        String AUTHENTICATION_SUCCESS = "AUTHENTICATION_SUCCESS";
-        String AUTHENTICATION_FAILURE = "AUTHENTICATION_FAILURE";
-        String AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE";
         String deviceDetails = getDeviceDetails(request.getHeader("user-agent"));
 
         Instant instant = Instant.now();
@@ -76,7 +75,6 @@ public class LoginAttemptsLogger implements AuditEventRepository {
         identifier.setLocalDate(ld);
         identifier.setFingerprints(deviceDetails);
         identifier.setAuditEventType("STORED");
-        //identifier.setAuditEventType(event.getType());
         //identifier.setLocation();
 
         //Map<String, String> data = convertDataToStrings(event.getData());
@@ -101,9 +99,8 @@ public class LoginAttemptsLogger implements AuditEventRepository {
 
     @Override
     public List<AuditEvent> find(String principal, Instant after, String type) {
-        return null;
+        return Collections.emptyList();
     }
-
 
     private String getDeviceDetails(String userAgent) {
         String deviceDetails = "UNKNOWN";
@@ -115,13 +112,11 @@ public class LoginAttemptsLogger implements AuditEventRepository {
                     " - " + client.os.family + "  " + client.os.major; //+ "." + client.os.minor ;
                     //" - " + client.device.family;
         }
-
         return deviceDetails;
     }
 
 
     public Map<String, String> convertDataToStrings(Map<String, Object> map) {
-        String AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE";
         Map<String, String> results = new HashMap<>();
 
         if (map != null) {

@@ -1,5 +1,7 @@
 package bnorbert.onlineshop.domain;
 
+import bnorbert.onlineshop.exception.ResourceNotFoundException;
+
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -13,6 +15,10 @@ import java.security.spec.KeySpec;
 import java.util.Base64;
 
 public class AES {
+
+    private AES() {
+        throw new ResourceNotFoundException("Utility class");
+    }
 
     public static String encryptPasswordBased(String plainText, SecretKey key, IvParameterSpec iv)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
