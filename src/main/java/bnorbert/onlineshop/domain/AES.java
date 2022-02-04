@@ -3,13 +3,11 @@ package bnorbert.onlineshop.domain;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 
 import javax.crypto.*;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
@@ -20,25 +18,27 @@ public class AES {
         throw new ResourceNotFoundException("Utility class");
     }
 
-    public static String encryptPasswordBased(String plainText, SecretKey key, IvParameterSpec iv)
+    public static String encryptPasswordBased(String plainText, SecretKey key)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-        cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+        byte [] iv = new byte[16];
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec gcmParameter = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, key, gcmParameter);
 
         return Base64.getEncoder()
                 .encodeToString(cipher.doFinal(plainText.getBytes()));
     }
 
-    public static String decryptPasswordBased(String cipherText, SecretKey key, IvParameterSpec iv)
+    public static String decryptPasswordBased(String cipherText, SecretKey key)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-
-        cipher.init(Cipher.DECRYPT_MODE, key, iv);
+        byte [] iv = new byte[16];
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, key, gcmParameterSpec);
 
         return new String(cipher.doFinal(Base64.getDecoder()
                 .decode(cipherText)));

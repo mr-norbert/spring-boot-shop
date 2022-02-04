@@ -4,7 +4,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -31,32 +30,18 @@ public class TestAES {
     }
 
     public String getText() throws InvalidKeySpecException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException {
-        String password = "$passwordf-L4606-9efEsXc-8dbvoc8f543O";
-        String salt = "12345678";
-        byte [] counter = new byte[16];
-        IvParameterSpec iv;
-        iv = new IvParameterSpec(counter);
+        String password = "$L4606-9efEsXc-8dbvoc8f543OAdsD#@!ldsaj.AS9@200";
+        String salt = "12337281";
         SecretKey key = AES.getKeyFromPassword(password, salt);
 
-        return AES.decryptPasswordBased(text, key, iv);
+        return AES.decryptPasswordBased(text, key);
     }
 
     public void setText(String text) throws InvalidKeySpecException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException {
-        String password = "$passwordf-L4606-9efEsXc-8dbvoc8f543O";
-        String salt = "12345678";
-        //IvParameterSpec ivParameterSpec = AES.generateIv();
-        IvParameterSpec iv;
+        String password = "$L4606-9efEsXc-8dbvoc8f543OAdsD#@!ldsaj.AS9@200";
+        String salt = "12337281";
         SecretKey key = AES.getKeyFromPassword(password, salt);
 
-        //String encodedIv = Base64.getEncoder().encodeToString(ivParameterSpec.getIV());
-
-        //String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
-        //byte[] decodedKey = Base64.getDecoder().decode(encodedKey);
-        //SecretKey replica = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
-
-        byte [] counter = new byte[16];
-        iv = new IvParameterSpec(counter);
-
-        this.text = AES.encryptPasswordBased(text, key, iv);
+        this.text = AES.encryptPasswordBased(text, key);
     }
 }

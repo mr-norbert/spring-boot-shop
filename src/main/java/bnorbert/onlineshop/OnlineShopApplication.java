@@ -8,21 +8,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 public class OnlineShopApplication {
 
-	//@Resource
-	//FileStorageService storageService;
-
 	public static void main(String[] args)  {
 		SpringApplication.run(OnlineShopApplication.class, args);
 
 	}
-
-	//@Bean
-	//CommandLineRunner init(FileStorageService storageService) {
-	//	return (args) -> {
-	//		//storageService.deleteAll();
-	//		//storageService.init();
-	//	};
-	//}
-
 
 }

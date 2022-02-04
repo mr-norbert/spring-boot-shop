@@ -51,8 +51,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductService {
 
-    //private static final String CATEGORY_FIELD = "category.name"; //IndexedEmbedded
-    //private static final String BRAND_FIELD = "brand.name"; //IndexedEmbedded
     private static final String FIELD_CATEGORY = "categoryName";
     private static final String FIELD_BRAND = "brandName";
     private static final String FIELD_COLOR = "color";
@@ -89,9 +87,8 @@ public class ProductService {
 
     public ProductResponse createProduct(CreateProductRequest request) {
         log.info("Creating product: {}", request);
-        //return productMapper.mapToProductResponse(productRepository.save(productMapper.map(request)));
-        Product product = //productRepository.save(productMapper.map(request));
-                productMapper.map(request);
+
+        Product product = productMapper.map(request);
 
         Bundle bundle = new Bundle();
         bundle.setName("Stocked");
@@ -154,7 +151,7 @@ public class ProductService {
                 .fetch(20);
         List<Product> result = searchResult.hits();
 
-        System.err.println(result.stream().map(Product::getId).collect(Collectors.toList()));
+        log.debug(String.valueOf(result.stream().map(Product::getId).collect(Collectors.toList())));
     }
 
     public ProductResponse getProductId(Long id) {
@@ -209,8 +206,7 @@ public class ProductService {
         suggestions.addAll(productRepository.findSuggestions(query.toLowerCase(), limit));
         suggestions.addAll(productRepository.getSuggestions(query.toLowerCase(), brandLimit));
 
-        //String response = String.join(", ", suggestions);
-        return suggestions.stream().collect(Collectors.joining(", "));
+        return String.join(", ", suggestions);
     }
 
     private String getClientIP() {
@@ -325,10 +321,7 @@ public class ProductService {
                     .totalHitCountThreshold(3000)
                     .fetch(pageNumber * 4, 4);
 
-
-            //SearchResultTotal resultTotal = result.total();
             long totalHitCount = result.total().hitCount();
-            //boolean hitCountExact = resultTotal.isHitCountExact();
 
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
@@ -412,10 +405,7 @@ public class ProductService {
                     .totalHitCountThreshold(3000)
                     .fetch(pageNumber * 4, 4);
 
-
-            SearchResultTotal resultTotal = result.total();
             long totalHitCount = result.total().hitCount();
-            boolean hitCountExact = resultTotal.isHitCountExact();
 
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
@@ -547,15 +537,11 @@ public class ProductService {
 
         getDistance(selectedSpecs, products, listOfGoodies, distanceMap, resultsList);
 
-        //List<Product> names = filterProducts(resultsList, ( Product p ) -> p.getName().startsWith(name));
-        //List<Product> productsInStock = filterProducts( names, ProductService::isAvailable);
-
         List<Predicate<Product>> predicates = new ArrayList<>();
         predicates.add( p -> p.getName().startsWith(name.toLowerCase()));
         predicates.add( p -> p.getIsAvailable().equals(true));
 
-        List<Long> idList = //productsInStock
-                resultsList
+        List<Long> idList = resultsList
                         .stream()
                         .filter( predicates.stream().reduce( p -> true, Predicate::and))
                         .map(Product::getId)
@@ -671,18 +657,15 @@ public class ProductService {
 
 
         if (sortType == ProductSortTypeEnum._TEST) {
-            //List<String> swearWords = new ArrayList<>();
+            //swearWords
             List<String> group = new ArrayList<>();
             group.add("0:0:0:0:0:0:0:1");
-
             List<String> identity = new ArrayList<>();
             identity.add(getClientIP());
-            //boolean button = Collections.disjoint(group, identity);
 
             List<String> sweeper = group.stream()
                     .filter(identity::contains).collect(Collectors.toList());
             if(!sweeper.isEmpty()){
-                //Collections.shuffle(sortedResponse);
                 Collections.rotate(sortedResponse, sortedResponse.size() / 2);
 
             }
@@ -714,7 +697,7 @@ public class ProductService {
         CustomForEach.forEach(products, (product, breaker) -> {
             double distance = euclideanDistance(selectedSpecs, product);
             double euclideanLimit = 3;
-            System.err.println(distance + " euclidean distance  -  " + product.getId());
+            log.info(distance + " euclidean distance  -  " + product.getId());
             if (distance > euclideanLimit) {
                 breaker.carryOn();
             } else {
@@ -724,13 +707,13 @@ public class ProductService {
 
         });
 
-        CustomForEach.forEach(products, (_product, breaker) -> {
-            double cosineDistance = 1.0 - cosineSimilarity(selectedSpecs, _product);
-            System.err.println(cosineDistance + " cosine distance  -  " +_product.getId());
+        CustomForEach.forEach(products, (newProduct, breaker) -> {
+            double cosineDistance = 1.0 - cosineSimilarity(selectedSpecs, newProduct);
+            log.info(cosineDistance + " cosine distance  -  " +newProduct.getId());
             if (cosineDistance > 0.3) {
                 breaker.carryOn();
             } else {
-                listOfGoodies.add(_product);
+                listOfGoodies.add(newProduct);
             }
 
         });
@@ -749,20 +732,6 @@ public class ProductService {
                         (Map.Entry::getKey, Map.Entry::getValue,
                                 (oldValue, newValue) -> oldValue,
                                 LinkedHashMap::new));
-    }
-
-    private List<Product> filterProducts(List<Product> products, Predicate<Product> p){
-        List<Product> result = new ArrayList<>();
-        for(Product product : products){
-            if( p.test(product)){
-                result.add(product);
-            }
-        }
-        return result;
-    }
-
-    private static boolean isAvailable(Product product) {
-        return product.getIsAvailable().equals(true);
     }
 
     //2 points
@@ -820,7 +789,6 @@ class CustomForEach {
     public static <T> void forEach(List<T> list, BiConsumer<T, Breaker> consumer) {
 
         Spliterator<T> spliterator = list.spliterator();
-        //Spliterator<T> split = spliterator.trySplit();
 
         boolean hadNext = true;
         Breaker breaker = new Breaker();
@@ -828,10 +796,6 @@ class CustomForEach {
         while (hadNext && !breaker.get()) {
             hadNext = spliterator.tryAdvance(elem -> consumer.accept(elem, breaker));
         }
-
-        //split.forEachRemaining(e -> {
-        //    consumer.accept(e, breaker);
-        //});
 
     }
 }

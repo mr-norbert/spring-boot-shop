@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PantryRepository extends JpaRepository<Pantry, Long> {
 
-    Page<Pantry> findById(Long product_id, Pageable pageable);
+    Page<Pantry> findById(Long productId, Pageable pageable);
 }

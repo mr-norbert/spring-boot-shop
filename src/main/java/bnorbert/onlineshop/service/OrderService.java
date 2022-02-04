@@ -89,7 +89,6 @@ public class OrderService {
                         ( "There is no cart for user " + userService.getCurrentUser().getId() ));
 
         List<CartItem> cartItemList = cartItemRepository.findByCart(cart);
-        //Order order = orderMapper.map( request, userService.getCurrentUser());
 
         Order order = OrderBuilder.createOrder( o -> {
             o.forUser(userService.getCurrentUser());
@@ -124,7 +123,6 @@ public class OrderService {
         log.info("Updating product stock");
         product.setUnitInStock( product.getUnitInStock() - cartItem.getQty());
         if(product.getUnitInStock() < 0 ){
-            //throw new ResourceNotFoundException("Not so much quantity in stock");
             product.setUnitInStock(0);
         }
         else if(product.getUnitInStock() < 1 ){
@@ -146,40 +144,40 @@ public class OrderService {
             identifier.setLength(product.getDescription().length());
             ordersWordsRepository.save(identifier);
 
-            OrderWord identifier_1 = new OrderWord();
-            identifier_1.setIndexOfWord(1);
-            identifier_1.setDocId(order.getId());
-            identifier_1.setWord(product.getBrandName());
-            identifier_1.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_1);
+            OrderWord identifier1 = new OrderWord();
+            identifier1.setIndexOfWord(1);
+            identifier1.setDocId(order.getId());
+            identifier1.setWord(product.getBrandName());
+            identifier1.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier1);
 
-            OrderWord identifier_2 = new OrderWord();
-            identifier_2.setIndexOfWord(2);
-            identifier_2.setDocId(order.getId());
-            identifier_2.setWord(product.getCategoryName());
-            identifier_2.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_2);
+            OrderWord identifier2 = new OrderWord();
+            identifier2.setIndexOfWord(2);
+            identifier2.setDocId(order.getId());
+            identifier2.setWord(product.getCategoryName());
+            identifier2.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier2);
 
-            OrderWord identifier_3 = new OrderWord();
-            identifier_3.setIndexOfWord(3);
-            identifier_3.setDocId(order.getId());
-            identifier_3.setWord(order.getCity());
-            identifier_3.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_3);
+            OrderWord identifier3 = new OrderWord();
+            identifier3.setIndexOfWord(3);
+            identifier3.setDocId(order.getId());
+            identifier3.setWord(order.getCity());
+            identifier3.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier3);
 
-            OrderWord identifier_4 = new OrderWord();
-            identifier_4.setIndexOfWord(4);
-            identifier_4.setDocId(order.getId());
-            identifier_4.setWord(userService.getCurrentUser().getEmail());
-            identifier_4.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_4);
+            OrderWord identifier4 = new OrderWord();
+            identifier4.setIndexOfWord(4);
+            identifier4.setDocId(order.getId());
+            identifier4.setWord(userService.getCurrentUser().getEmail());
+            identifier4.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier4);
 
-            OrderWord _identifier = new OrderWord();
-            _identifier.setIndexOfWord(5);
-            _identifier.setDocId(order.getId());
-            _identifier.setWord(order.getId().toString());
-            _identifier.setLength(product.getDescription().length());
-            ordersWordsRepository.save(_identifier);
+            OrderWord identifier5 = new OrderWord();
+            identifier5.setIndexOfWord(5);
+            identifier5.setDocId(order.getId());
+            identifier5.setWord(order.getId().toString());
+            identifier5.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier5);
         });
     }
 
@@ -208,9 +206,9 @@ public class OrderService {
                         .mapToDouble(Integer::doubleValue)
                         .average().orElse(1.0);
                 termFrequency = wordCount / docLengthAvr;
-                double TF_IDF = termFrequency * inverseDocumentFrequency;
+                double tfidf = termFrequency * inverseDocumentFrequency;
 
-                hashMap.put(doc, hashMap.getOrDefault(doc, (double) 0) + TF_IDF);
+                hashMap.put(doc, hashMap.getOrDefault(doc, (double) 0) + tfidf);
             }
         }
 
@@ -287,14 +285,6 @@ public class OrderService {
                     .map(search -> new PageImpl<>(response, pageable, totalHitCount))
                     .orElseThrow(() -> new ResourceNotFoundException("")));
         }
-
-        //SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
-        //SearchResult<OrderStatusEnum> status = searchSession.search(Order.class)
-        //        .select(f-> f.field("status", OrderStatusEnum.class))
-        //        //.where(f -> f.match().field("status").matching(OrderStatusEnum.TEST))
-        //        .where(f -> f.id().matchingAny(idSet))
-        //        .fetch(idSet.size());
-        //System.err.println(status.hits());
 
         List<OrderResponse> response = orderMapper.entitiesToDTOs(result);
 

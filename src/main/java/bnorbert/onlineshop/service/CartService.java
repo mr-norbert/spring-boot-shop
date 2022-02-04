@@ -23,8 +23,6 @@ import java.util.Optional;
 @Slf4j
 public class CartService {
 
-    //private static final String secretKey = "";
-
     private final CartRepository cartRepository;
     private final UserService userService;
     private final ProductService productService;
@@ -196,7 +194,7 @@ public class CartService {
 
         Cart cart = cartRepository
                 .findByUser_Id(userService.getCurrentUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("There is no cart for user " + userService.getCurrentUser().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("There is no cart for user" + userService.getCurrentUser().getId()));
 
         CartItem cartItem = cartItemRepository
                 .findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId())
@@ -208,50 +206,5 @@ public class CartService {
 
         cartRepository.save(cart);
     }
-
-/*
-    @Transactional
-    public PaymentIntent paymentIntent(PaymentIntentDto request) throws StripeException {
-        log.info("Creating payment: {}", request);
-        Stripe.apiKey = secretKey;
-
-        Cart cart = cartRepository
-                .findByUser_Id(userService.getCurrentUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cart: " + userService.getCurrentUser().getId() + " not found."));
-
-        Set<String> paymentMethodTypes = new HashSet<>();
-        paymentMethodTypes.add("card");
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("amount", cart.getSumForStripe() * 100);
-        params.put("currency", request.getCurrency());
-        params.put("payment_method_types", paymentMethodTypes);
-
-        return PaymentIntent.create(params);
-    }
-
-
-    public PaymentIntent confirm(String id) throws StripeException {
-        log.info("Confirm payment: {}", id);
-
-        Stripe.apiKey = secretKey;
-        PaymentIntent paymentIntent = PaymentIntent.retrieve(id);
-        Map<String, Object> params = new HashMap<>();
-        params.put("payment_method", "pm_card_visa");
-        paymentIntent.confirm(params);
-        return paymentIntent;
-    }
-
-
-    public PaymentIntent cancel(String id) throws StripeException {
-        log.info("Cancel payment: {}", id);
-
-        Stripe.apiKey = secretKey;
-        PaymentIntent paymentIntent = PaymentIntent.retrieve(id);
-        paymentIntent.cancel();
-        return paymentIntent;
-    }
-
- */
 
 }

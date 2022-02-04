@@ -101,7 +101,7 @@ public class UserService {
         User user = userRepository.
                 findByEmail(request.getEmail()).orElseThrow(() ->
                 new ResourceNotFoundException
-                        ("User " + request.getEmail() + " not found."));
+                        ("User " + request.getEmail() + "  not found."));
 
         VerificationToken verificationToken = new VerificationToken(user);
         user.addToken(verificationToken);
@@ -117,13 +117,13 @@ public class UserService {
                 .findByToken(request.getVerificationToken())
                 .orElseThrow(() ->
                         new ResourceNotFoundException
-                                ("Token " + request.getVerificationToken() + " not found."));
+                                ("Token" + request.getVerificationToken() + "not found."));
         User user = verificationToken.getUser();
         user.setEnabled(true);
 
         if (currentTime().isAfter(verificationToken.getExpirationDate())){
             throw new ResourceNotFoundException
-                    ("Token " + request.getVerificationToken() + "has expired");
+                    ("Token  " + request.getVerificationToken() + "has expired");
         }
 
         User savedUser = userRepository.save(user);

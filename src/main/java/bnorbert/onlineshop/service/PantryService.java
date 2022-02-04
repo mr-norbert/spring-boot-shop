@@ -6,6 +6,7 @@ import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.repository.ProductRepository;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.csv.CSVFormat;
@@ -37,12 +38,16 @@ import java.util.stream.Stream;
 @Service
 @Transactional
 @AllArgsConstructor
+@Slf4j
 public class PantryService {
 
     private final PantryRepository pantryRepository;
     private final ProductRepository productRepository;
 
     public void findSimilarItems() throws SQLException, TasteException {
+
+        List<Pantry> oldItems = pantryRepository.findAll();
+        pantryRepository.deleteAll(oldItems);
 
         List<Pantry> pantries = Stream
                 .generate(Pantry::new)
@@ -61,19 +66,16 @@ public class PantryService {
         ItemSimilarity similarity = new TanimotoCoefficientSimilarity(model);
         GenericItemBasedRecommender genericItemBasedRecommender = new GenericItemBasedRecommender(model, similarity);
 
-        MultiValuedMap<Long, Long> map = new ArrayListValuedHashMap<>();
-
         for (LongPrimitiveIterator iterator = model.getItemIDs(); iterator.hasNext(); ) {
             long itemId = iterator.nextLong();
 
-            List<RecommendedItem> recommendedItemList = genericItemBasedRecommender.mostSimilarItems(itemId, 5);
+            List<RecommendedItem> recommendations = genericItemBasedRecommender.mostSimilarItems(itemId, 5);
 
 
-            int size = recommendedItemList.size();
+            int size = recommendations.size();
             for(int i = 0; i < size ; i++) {
-                RecommendedItem recommendedItem = recommendedItemList.get(i);
-                System.out.println(itemId + "," + recommendedItem.getItemID() + "," + recommendedItem.getValue());
-                map.put(itemId, recommendedItem.getItemID());
+                RecommendedItem recommendedItem = recommendations.get(i);
+                log.info(itemId + "," + recommendedItem.getItemID() + "," + recommendedItem.getValue());
 
                 Product product = productRepository.findById(recommendedItem.getItemID())
                         .orElseThrow(EntityNotFoundException::new);

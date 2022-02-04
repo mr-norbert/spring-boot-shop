@@ -54,7 +54,7 @@ public class RoleService {
     public void addPermissionToRole(AddToRoleRequest request){
         log.info("Adding permission to role: {}", request);
         Permission permission = permissionRepository.findById(request.getPermissionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Permission" + request.getPermissionId() + "not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Permission" + request.getPermissionId() + " not found"));
         Role role = getRole(request.getRoleId());
         role.addToRole(permission);
 

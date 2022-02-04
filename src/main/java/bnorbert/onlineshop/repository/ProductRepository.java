@@ -15,7 +15,4 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @org.springframework.data.jpa.repository.Query(value = "SELECT brand_name FROM (SELECT brand_name, SUM(hits) AS totalHits FROM product WHERE brand_name REGEXP ?1 GROUP BY name ORDER BY totalHits DESC LIMIT ?2) as Q", nativeQuery = true)
     List<String> getSuggestions(String pattern, int limit);
 
-    //@org.springframework.data.jpa.repository.Query(value = "SELECT created_date FROM product WHERE id = ?1", nativeQuery = true)
-    //LocalDateTime getCreatedDate(long id);
-
 }

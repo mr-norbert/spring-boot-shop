@@ -160,7 +160,6 @@ public class ReviewService {
                         .build();
 
         try (ZooModel<String, Classifications> model = criteria.loadModel();
-             //Predictor<String, Classifications> predictor = model.newPredictor()) {
             Predictor<String, Classifications> predictor = model.newPredictor(new Translator<String, Classifications>() {
                 private Vocabulary vocabulary;
                 private BertTokenizer tokenizer;
@@ -222,15 +221,8 @@ public class ReviewService {
                 .where(f -> f.bool(b -> {
                     b.must(f.match().field( "multiTypeReviewMetadata.rating_int")
                             .matching(rating));
-                    //b.must(f.match().field( "multiTypeReviewMetadata.category")
-                    //        .matching("category"));
-                    //b.must(f.match().field( "sentiment")
-                    //        .matching( "positive"));
                     b.must(f.range().field( "rating_probability")
                             .between( 83D, 100D));
-                    //b.must(f.range().field( "rating_probability")
-                    //        .between( 90.0, 100.0));
-
                 }))
                 //.sort( f -> f.field( "multiTypeReviewMetadata.rating_int" ).desc() )
                 .fetchHits( 100);
@@ -329,44 +321,22 @@ public class ReviewService {
             //CategoryEnum categoryEnum
     ) {
         List<Review> reviews = reviewRepository.findAll();
-        /*
-        List<Review> reviews = reviewRepository.findReviewsByProductCategoryName(categoryEnum.name().toLowerCase());
-
-        switch (categoryEnum) {
-            case TEST:
-                System.out.println("TEST");
-                break;
-
-            case _TEST:
-                System.out.println("_TEST");
-                break;
-
-            case STRING:
-                System.out.println("String");
-                break;
-
-            default:
-                System.out.println("Default");
-                break;
-        }
-
-         */
 
         User currentUser = userService.getUser(userService.getCurrentUser().getId());
         long currentUserId = currentUser.getId();
-        //double myTasteAverage;
+        double myTasteAverage;
         double cosineSim;
         double cosineDist;
 
-        //List<Review> reviewsByUserId = reviewRepository.findReviewsByUser_Id(currentUserId);
+        List<Review> reviewsByUserId = reviewRepository.findReviewsByUser_Id(currentUserId);
         List<Product> products = productRepository.findAll();
 
-        //myTasteAverage = reviewsByUserId
-        //        .stream()
-        //        .mapToDouble(Review::getRating)
-        //        .average().orElse(Double.NaN);
-        //        //.sum();
-        //log.info(String.valueOf(myTasteAverage));
+        myTasteAverage = reviewsByUserId
+                .stream()
+                .mapToDouble(Review::getRating)
+                .average().orElse(Double.NaN);
+        log.info(String.valueOf(myTasteAverage));
+        log.info(String.valueOf(reviewsByUserId));
 
         Map<Long, Map<Long, Double>> trifecta = new HashMap<>();
         Map<Long, Double> sumOfValues = new HashMap<>();
@@ -381,9 +351,6 @@ public class ReviewService {
         int size = reviews.size();
         for(int i = 0; i < size ; i++) {
             Review review = reviews.get(i);
-
-            //sumOfValues.put(review.getUser().getId(),
-            //                sumOfValues.getOrDefault(review.getUser().getId(), 0.0) + (double)review.getRating());
 
             sumOfValues.merge(review.getUser().getId(), (double)review.getRating(), Double::sum);
 
@@ -407,9 +374,9 @@ public class ReviewService {
         Iterator<Map.Entry<Long, Map<Long, Double>>> iterator = trifecta.entrySet().iterator();
         while (iterator.hasNext()) {
 
-            Map.Entry<Long, Map<Long, Double>> _entry = iterator.next();
+            Map.Entry<Long, Map<Long, Double>> trifectaMapEntry = iterator.next();
 
-            String values = _entry.getValue().toString();
+            String values = trifectaMapEntry.getValue().toString();
             ArrayList<Long> result = userIds.entrySet().stream()
                     .filter(entry -> values.contains(entry.getValue()))
                     //.sorted(Map.Entry.comparingByValue())
@@ -424,16 +391,16 @@ public class ReviewService {
                     .forEach(productId -> {
 
                         Map<Long, Double> map = myTaste.get(currentUserId);
-                        Double _value = map.get(productId);
-                        if (_value != null) {
+                        Double rating = map.get(productId);
+                        if (rating != null) {
 
-                            Map<Long, Double> innerMap = trifecta.get(_entry.getKey());
+                            Map<Long, Double> innerMap = trifecta.get(trifectaMapEntry.getKey());
                             Double value = innerMap.get(productId);
                             if (value != null) {
 
-                                customerReviews.computeIfAbsent(_entry.getKey(), k -> new ArrayList<>()) .add(value);
-                                a.updateAndGet(v1 -> v1 + _value * value);
-                                b.updateAndGet(v1 -> v1 + Math.pow(_value, 2));
+                                customerReviews.computeIfAbsent(trifectaMapEntry.getKey(), k -> new ArrayList<>()) .add(value);
+                                a.updateAndGet(v1 -> v1 + rating * value);
+                                b.updateAndGet(v1 -> v1 + Math.pow(rating, 2));
                                 c.updateAndGet(v1 -> v1 + Math.pow(value, 2));
 
                             }
@@ -445,8 +412,8 @@ public class ReviewService {
             cosineSim = a.get() / (Math.sqrt(b.get()) * Math.sqrt(c.get()));
             cosineDist = 1.0 - cosineSim;
 
-            cosineSimilarity.put(_entry.getKey(), cosineSim);
-            cosineDistance.put(_entry.getKey(), cosineDist);
+            cosineSimilarity.put(trifectaMapEntry.getKey(), cosineSim);
+            cosineDistance.put(trifectaMapEntry.getKey(), cosineDist);
 
         }
 
@@ -456,7 +423,9 @@ public class ReviewService {
 
         Map<Long, Double> sortedPredictions = sortByValueReversed(predictions);
         Map<Long, Double> limited = sortByValueReverseOrder(predictions);
+        Map<Long, Double> sortedAscending = sortByValue(predictions);
         log.info("Sorted predictions " + sortedPredictions );
+        log.info("Sorted .asc " + sortedAscending );
         log.info(String.valueOf(limited));
 
         Set<Long> idSet = new LinkedHashSet<>(sortedPredictions.keySet());
@@ -485,7 +454,7 @@ public class ReviewService {
                     .mapToDouble(Double::doubleValue)
                     .sorted();
 
-            double _median = listOfValues.size() % 2 == 0 ?
+            double otherMedian = listOfValues.size() % 2 == 0 ?
                     doubleStream
                             .skip(listOfValues.size() / 2L - 1)
                             .limit(2)
@@ -501,8 +470,8 @@ public class ReviewService {
             }
 
             median.put(entry.getKey(), medianOfDoubleStream.getMedian());
-            //log.debug(String.valueOf(_median));
-            //log.debug(String.valueOf(median));
+            log.debug(String.valueOf(otherMedian));
+            log.debug(String.valueOf(median));
         }
     }
 
@@ -576,8 +545,6 @@ public class ReviewService {
 
     private Map<Long, Double> sortByValueReverseOrder(Map<Long, Double> map) {
         int elementsToReturn = 5;
-
-        //.forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
 
         return map.entrySet()
                 .stream()

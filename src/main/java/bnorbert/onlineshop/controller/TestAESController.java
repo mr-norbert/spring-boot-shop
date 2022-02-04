@@ -23,15 +23,15 @@ public class TestAESController {
 
     private final TestAESService testAESService;
 
-    @PostMapping("/test")
+    @PostMapping("/createTest")
     public ResponseEntity<Void> createText() throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
         testAESService.createText();
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/getId/{id}")
+    @GetMapping("/getTextId/{id}")
     public TestAES get(@PathVariable long id) {
-        return testAESService.get(id);
+        return testAESService.getText(id);
     }
 
 

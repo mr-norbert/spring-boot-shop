@@ -73,10 +73,10 @@ public class ImageService implements FileStorageService{
                 .fetch(20);
         List<Image> result = hits.hits();
 
-        System.err.println(result.stream()
+        log.debug(String.valueOf(result.stream()
                 .map(Image::getId)
                 //.distinct()
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())));
     }
 
     private final Path rootLocation = Paths.get("src/main/resources/images");
@@ -91,7 +91,7 @@ public class ImageService implements FileStorageService{
         try {
             image.setPhoto(file.getBytes());
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+            throw new ResourceNotFoundException(e.getMessage());
         }
         image.setOriginalFilename(file.getOriginalFilename());
         image.setSize(file.getSize());
@@ -105,9 +105,6 @@ public class ImageService implements FileStorageService{
         InputStream inputStream = new ByteArrayInputStream(file.getBytes());
         BufferedImage bufferedImage = ImageIO.read(inputStream);
         ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
-
-        //String modelUrl =
-        //        "http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_320x320_coco17_tpu-8.tar.gz";
 
         Criteria<ai.djl.modality.cv.Image, DetectedObjects> criteria =
                 Criteria.builder()
@@ -137,7 +134,6 @@ public class ImageService implements FileStorageService{
             log.info("Binder: {}", words);
         }
         imageRepository.save(image);
-        //copy(file);
     }
 
     private static void saveBoundingBoxImage(ai.djl.modality.cv.Image img, DetectedObjects detection) throws IOException {
@@ -152,14 +148,14 @@ public class ImageService implements FileStorageService{
     public void copy(MultipartFile file) {
         try {
             if (file.isEmpty()) {
-                throw new RuntimeException("Failed to store empty file.");
+                throw new ResourceNotFoundException("Failed to store empty file.");
             }
             Path destinationFile = this.rootLocation.resolve(
                             Paths.get(Objects.requireNonNull(file.getOriginalFilename())))
                     .normalize().toAbsolutePath();
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
 
-                throw new RuntimeException(
+                throw new ResourceNotFoundException(
                         "Cannot store file outside current directory.");
             }
             try (InputStream inputStream = file.getInputStream()) {
@@ -168,7 +164,7 @@ public class ImageService implements FileStorageService{
             }
         }
         catch (IOException e) {
-            throw new RuntimeException("Failed to store file.", e);
+            throw new ResourceNotFoundException("Failed to store file.");
         }
     }
 
@@ -177,7 +173,7 @@ public class ImageService implements FileStorageService{
         try {
             Files.createDirectory(rootLocation);
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder for upload! " + e.getMessage());
+            throw new ResourceNotFoundException("Could not initialize folder for upload! " + e.getMessage());
         }
     }
     @Override
@@ -187,7 +183,7 @@ public class ImageService implements FileStorageService{
                     .filter(path -> !path.equals(this.rootLocation))
                     .map(this.rootLocation::relativize);
         } catch (IOException e) {
-            throw new RuntimeException("Could not load the files!" + e.getMessage());
+            throw new ResourceNotFoundException("Could not load the files!" + e.getMessage());
         }
     }
 
@@ -198,7 +194,7 @@ public class ImageService implements FileStorageService{
 
     @Override
     public Resource load(String name) {
-        log.info("Retrieving image {}", name);
+        log.info("Retrieving image: {}", name);
         try {
             Path file = rootLocation.resolve(name);
             Resource resource = new UrlResource(file.toUri());
@@ -206,10 +202,10 @@ public class ImageService implements FileStorageService{
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("Could not read the file!");
+                throw new ResourceNotFoundException("Could not read the file!");
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Error: " + e.getMessage());
+            throw new ResourceNotFoundException("Error: " + e.getMessage());
         }
     }
 

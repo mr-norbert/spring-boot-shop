@@ -15,8 +15,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findTopByProductAndUserOrderByIdDesc(Product product, User currentUser);
     Page<Review> findReviewsByProductIdAndRatingOrderByIdDesc(long productId, int rating, Pageable pageable);
     Page<Review> findReviewsByProductId(long productId, Pageable pageable);
-    List<Review> findReviewsByRatingAndProductId(int rating, Long product_id);
-    List<Review> findReviewsByUser_Id(long user_id);
+    List<Review> findReviewsByRatingAndProductId(int rating, Long productId);
+    List<Review> findReviewsByUser_Id(long userId);
 
-    List<Review> findReviewsByProductCategoryName(String product_categoryName);
+    List<Review> findReviewsByProductCategoryName(String productCategoryName);
 }

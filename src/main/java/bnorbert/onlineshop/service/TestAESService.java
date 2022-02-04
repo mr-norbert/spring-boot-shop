@@ -22,15 +22,15 @@ public class TestAESService {
 
     public void createText() throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
         TestAES testAES = new TestAES();
-        testAES.setText("_text");
+        testAES.setText("Hello!");
         testAESRepository.save(testAES);
 
-        TestAES _testAES = new TestAES();
-        _testAES.setText("871f-4606-9efc-8dbc8f543a06");
-        testAESRepository.save(_testAES);
+        TestAES testAES2 = new TestAES();
+        testAES2.setText("871f-4606-9efc-8dbc-8f54-3a06");
+        testAESRepository.save(testAES2);
     }
 
-    public TestAES get(long id) {
+    public TestAES getText(long id) {
         return testAESRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id + " not found."));
     }
