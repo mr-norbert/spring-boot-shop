@@ -40,20 +40,20 @@ import bnorbert.onlineshop.repository.ProductRepository;
 import bnorbert.onlineshop.repository.ReviewRepository;
 import bnorbert.onlineshop.transfer.product.ProductResponse;
 import bnorbert.onlineshop.transfer.review.CreateReviewRequest;
-import bnorbert.onlineshop.transfer.review.GetReviewsRequest;
 import bnorbert.onlineshop.transfer.review.ReviewResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.search.mapper.orm.Search;
+import opennlp.tools.langdetect.Language;
+import opennlp.tools.langdetect.LanguageDetectorME;
+import opennlp.tools.langdetect.LanguageDetectorModel;
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.mapper.orm.session.SearchSession;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,6 +84,63 @@ public class ReviewService {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.entityManager = entityManager;
+    }
+
+    private static final String PATH_FIELD_RATING = "multiTypeReviewMetadata.rating_int";
+    private static final String PATH_FIELD_TITLE = "multiTypeReviewMetadata.title";
+    private static final String PATH_FIELD_CATEGORY = "multiTypeReviewMetadata.category";
+
+    private final String[] searchFields = new String[]{
+            PATH_FIELD_RATING, PATH_FIELD_TITLE, PATH_FIELD_CATEGORY
+    };
+
+    public List<ReviewResponse> search(String query, int pageNumber) {
+        log.info("Retrieving reviews");
+        SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
+
+        SearchResult<Review> hits = searchSession.search(Review.class)
+                .where(f -> f.bool(b -> {
+                    b.must(f.match().fields(searchFields)
+                            .matching(query));
+                    b.must(f.range().field( "rating_probability")
+                            .between( 83D, 100D));
+                }))
+                //.sort( f -> f.field( "multiTypeReviewMetadata.rating_int" ).desc() )
+                .fetch(pageNumber * 4, 4);
+
+        List<Review> reviews = hits.hits();
+        return reviewMapper.entitiesToEntityDTOs(reviews);
+    }
+
+    public String sentenceDetector(long id) throws IOException {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("id not found"));
+
+        File initialFile = new File("src/main/resources/opennlp-en-ud-ewt-sentence-1.0-1.9.3.bin");
+        String[] sentences;
+        try(InputStream modelIn = new FileInputStream(initialFile)){
+            SentenceModel model = new SentenceModel(modelIn);
+            SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
+            sentences = sentenceDetector.sentDetect(review.getContent());
+        }
+        return String.join("\n", sentences);
+    }
+
+    public String languageDetector(long id) throws IOException {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("id not found"));
+        Language[] languages;
+        Language bestLanguage;
+
+        File initialFile = new File("src/main/resources/langdetect-183.bin");
+        try(InputStream modelIn = new FileInputStream(initialFile)){
+            LanguageDetectorModel model = new LanguageDetectorModel(modelIn);
+            LanguageDetectorME languageDetector = new LanguageDetectorME(model);
+            languages = languageDetector.predictLanguages(review.getContent());
+            log.info(Arrays.toString(languages));
+            bestLanguage = languageDetector.predictLanguage(review.getContent());
+        }
+        return bestLanguage.getLang();
     }
 
     public void createReview(CreateReviewRequest request) throws MalformedModelException, IOException, ModelNotFoundException, TranslateException {
@@ -203,7 +260,7 @@ public class ReviewService {
     private void bindThem(CreateReviewRequest request, Product product, Review review, Classifications classifications, Classifications newClassifications) {
 
         Map<String, Serializable> binder = new TreeMap<>();
-        binder.put("comment", request.getContent());
+        binder.put("title", request.getIntent());
         binder.put("rating_int", classifications.best().getClassName());
         binder.put("category", product.getCategoryName());
         binder.put("product", product.getName());
@@ -212,24 +269,6 @@ public class ReviewService {
         review.setMultiTypeReviewMetadata(binder);
         log.info("Binder : {}", binder);
     }
-
-    public List<ReviewResponse> retrieveReviews(String rating){
-        log.info("Retrieving reviews");
-        SearchSession searchSession = Search.session(entityManager);
-
-        List<Review> hits = searchSession.search(Review.class)
-                .where(f -> f.bool(b -> {
-                    b.must(f.match().field( "multiTypeReviewMetadata.rating_int")
-                            .matching(rating));
-                    b.must(f.range().field( "rating_probability")
-                            .between( 83D, 100D));
-                }))
-                //.sort( f -> f.field( "multiTypeReviewMetadata.rating_int" ).desc() )
-                .fetchHits( 100);
-
-        return reviewMapper.entitiesToEntityDTOs(hits);
-    }
-
 
     private static class MyTranslator implements Translator<String, Classifications> {
 

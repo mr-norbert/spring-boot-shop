@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import static org.springframework.http.ResponseEntity.status;
@@ -35,6 +36,25 @@ public class ReviewController {
             throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
         reviewService.createReview(request);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ReviewResponse>> search(
+            @RequestParam(name = "q") String query,
+            @RequestParam(name = "page-number", required = false, defaultValue = "0") int pageNumber)
+    {
+        List<ReviewResponse> responses = reviewService.search(query, pageNumber);
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
+    @GetMapping("/{identifier}/reader")
+    public ResponseEntity<String> sentenceDetector(@PathVariable long identifier) throws IOException {
+        return status(HttpStatus.OK).body(reviewService.sentenceDetector(identifier));
+    }
+
+    @GetMapping("/{identifier}/language")
+    public ResponseEntity<String> languageDetector(@PathVariable long identifier) throws IOException {
+        return status(HttpStatus.OK).body(reviewService.languageDetector(identifier));
     }
 
     @GetMapping("/{id}")
