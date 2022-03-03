@@ -4,13 +4,12 @@ import bnorbert.onlineshop.domain.CartItem;
 import bnorbert.onlineshop.service.CartService;
 import bnorbert.onlineshop.transfer.cart.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @CrossOrigin
 @RestController
@@ -24,28 +23,28 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    @PutMapping("/addProductToCart")
-    public ResponseEntity<Page<AddToCartResponse>> addProductToCart(
-            @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
-        Page<AddToCartResponse> carts = cartService.addProductToCart(request, pageable);
+    @PostMapping//put
+    public ResponseEntity<List<AddToCartResponse>> addProductToCart(
+            //@PathVariable("productId") long productId,
+            @RequestBody @Valid AddProductToCartRequest request) {
+        List<AddToCartResponse> carts = cartService.addProductToCart(request);
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
-    @PutMapping("/addToCartChristmasEdition")
-    public ResponseEntity<Page<AddToCartResponse>> add(
-            @RequestBody @Valid AddProductToCartRequest request, Pageable pageable) {
-        Page<AddToCartResponse> carts = cartService.addToCartChristmasEdition(request, pageable);
+    @PostMapping("/editions")//prototype
+    public ResponseEntity<List<AddToCartResponse>> add(
+            @RequestBody @Valid AddProductToCartRequest request) {
+        List<AddToCartResponse> carts = cartService.addToCartChristmasEdition(request);
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
-    @GetMapping("/getCart")
+    @GetMapping
     public ResponseEntity<CartResponse> getCart() {
         CartResponse cart = cartService.getCart();
         return new ResponseEntity<>(cart, HttpStatus.OK);
     }
 
-
-    @PutMapping("/updateCart")
+    @PutMapping
     public ResponseEntity<CartItem> updateCart(
             @RequestBody @Valid UpdateQuantityRequest request) {
         cartService.updateCart(request);
@@ -58,28 +57,5 @@ public class CartController {
         cartService.removeProductFromCart(request);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-/*
-    @PostMapping("/paymentIntent")
-    public ResponseEntity<String> payment(@RequestBody PaymentIntentDto request) throws StripeException {
-        PaymentIntent paymentIntent = cartService.paymentIntent(request);
-        String paymentStr = paymentIntent.toJson();
-        return new ResponseEntity<String>(paymentStr, HttpStatus.OK);
-    }
-
-    @PostMapping("/confirm/{id}")
-    public ResponseEntity<String> confirm(@PathVariable("id") String id) throws StripeException {
-        PaymentIntent paymentIntent = cartService.confirm(id);
-        String paymentStr = paymentIntent.toJson();
-        return new ResponseEntity<String>(paymentStr, HttpStatus.OK);
-    }
-
-    @PostMapping("/cancel/{id}")
-    public ResponseEntity<String> cancel(@PathVariable("id") String id) throws StripeException {
-        PaymentIntent paymentIntent = cartService.cancel(id);
-        String paymentStr = paymentIntent.toJson();
-        return new ResponseEntity<String>(paymentStr, HttpStatus.OK);
-    }
-
- */
 
 }

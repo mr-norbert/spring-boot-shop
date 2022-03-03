@@ -10,12 +10,11 @@ import bnorbert.onlineshop.repository.CartRepository;
 import bnorbert.onlineshop.repository.PantryRepository;
 import bnorbert.onlineshop.transfer.cart.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,11 +45,8 @@ public class CartService {
     }
 
     @Transactional
-    public Page<AddToCartResponse> addProductToCart(AddProductToCartRequest request, Pageable pageable) {
+    public List<AddToCartResponse> addProductToCart(AddProductToCartRequest request) {
         log.info("Adding product to cart: {}", request);
-
-        Page<Pantry> pantries = pantryRepository
-                .findById(request.getProductId(), pageable);
 
         Cart cart = cartRepository
                 .findByUser_Id(userService.getCurrentUser().getId())
@@ -78,20 +74,21 @@ public class CartService {
             cart.setGrandTotal(cart.getSum());
             cartItemRepository.save(newCartItem);
         }
-
         cartRepository.save(cart);
 
-        List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
-        return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
+        List<Pantry> pantries = new ArrayList<>();
+        Optional<Pantry> pantry = pantryRepository.findById(request.getProductId());
+        pantry.ifPresent(pantries::add);
 
+        if(!pantries.isEmpty()) {
+            return itemMapper.entitiesToEntityDTOs(pantries);
+        }
+        return Collections.emptyList();
     }
 
     @Transactional
-    public Page<AddToCartResponse> addToCartChristmasEdition(AddProductToCartRequest request, Pageable pageable) {
+    public List<AddToCartResponse> addToCartChristmasEdition(AddProductToCartRequest request) {
         log.info("Adding product to cart: {}", request);
-
-        Page<Pantry> pantries = pantryRepository
-                .findById(request.getProductId(), pageable);
 
         Cart cart = cartRepository
                 .findByUser_Id(userService.getCurrentUser().getId())
@@ -105,7 +102,7 @@ public class CartService {
 
         Product product = productService.getProduct(request.getProductId());
         String name = "Christmas";
-        Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(name, product.getId());
+        Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(name.toLowerCase(), product.getId());
 
         Optional<CartItem> cartItem = cartItemRepository.findTop1ByProductIdAndCart_Id(request.getProductId(), cart.getId());
         if(cartItem.isPresent()){
@@ -134,18 +131,22 @@ public class CartService {
             cart.setGrandTotal(cart.getSum());
             cartItemRepository.save(newCartItem);
         }
-
         cartRepository.save(cart);
 
-        List<AddToCartResponse> addToCartResponses = itemMapper.entitiesToEntityDTOs(pantries.getContent());
-        return new PageImpl<>(addToCartResponses, pageable, pantries.getTotalElements());
+        List<Pantry> pantries = new ArrayList<>();
+        Optional<Pantry> pantry = pantryRepository.findById(request.getProductId());
+        pantry.ifPresent(pantries::add);
 
+        if(!pantries.isEmpty()) {
+            return itemMapper.entitiesToEntityDTOs(pantries);
+        }
+        return Collections.emptyList();
     }
 
     public void clearCart(Cart cart) {
-        List<CartItem> cartItemList = cartItemRepository.findByCart(cart);
+        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
 
-        cartItemList.forEach(cartItem -> {
+        cartItems.forEach(cartItem -> {
             cartItem.setCart(null);
             cartItemRepository.save(cartItem);
         });
