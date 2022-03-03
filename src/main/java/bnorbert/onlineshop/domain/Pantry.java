@@ -12,32 +12,25 @@ import java.util.*;
 public class Pantry {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY)
+    private Product product;
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
     @JoinTable(name = "window_shopping",
-            joinColumns = @JoinColumn(name = "item_id"),
-            inverseJoinColumns = @JoinColumn(name = "product_id"))
-    private Set<Product> products = new HashSet<>();
-
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "recommended_product_id"))
+    private Set<Product> products = new LinkedHashSet<>();
 
     public void addProduct(Product product) {
         products.add(product);
         product.getPantries().add(this);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Pantry pantry = (Pantry) o;
-        return id == pantry.id &&
-                Objects.equals(products, pantry.products);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, products);
+    public void removeProduct(Product product) {
+        products.remove(product);
+        product.getPantries().add(this);
     }
 }

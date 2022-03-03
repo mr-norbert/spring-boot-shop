@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 @CrossOrigin
@@ -20,17 +19,22 @@ public class PantryController {
         this.service = pantryService;
     }
 
-    @PutMapping("/findSimilarItems")
-    public ResponseEntity<Void> findSimilarItems() throws SQLException, TasteException {
-        service.findSimilarItems();
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PostMapping("/developers/creators")
+    public ResponseEntity<Void> generateIds() {
+        service.generateIds();
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PostMapping("/createPantry")
-    public ResponseEntity<Void> createPantry() throws SQLException, TasteException, IOException {
-        service.createPantry();
-        return new ResponseEntity<>(HttpStatus.OK);
+    @DeleteMapping("/developers/removal")
+    public ResponseEntity<Void> wipe() {
+        service.deleteAll();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @PutMapping("/developers/partition")
+    public ResponseEntity<Void> findSimilarProducts() throws SQLException, TasteException {
+        service.findSimilarProducts();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
 }
