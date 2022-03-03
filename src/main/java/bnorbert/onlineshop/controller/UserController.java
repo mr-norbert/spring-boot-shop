@@ -29,61 +29,49 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<UserResponse> createUser(
             @RequestBody @Valid SaveUserRequest request) {
         UserResponse user = userService.createUser(request);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
-    @GetMapping("/getUserId/{userId}")
+    @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getUserId(@PathVariable("userId") long userId) {
         UserResponse user = userService.getUserId(userId);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @PostMapping("/confirmUser")
+    @PostMapping("/settings/confirmation")
     public ResponseEntity<UserResponse> confirmUser(
             @RequestBody @Valid VerifyTokenRequest request) {
         UserResponse user = userService.confirmUser(request);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
-    @PostMapping("/resendToken")
+    @PostMapping("/settings/tokens")
     public ResponseEntity<UserResponse> resendToken(
             @RequestBody @Valid ResendTokenRequest request) {
         UserResponse user = userService.resendToken(request);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable("id") long id) {
-        User user = userService.getUser(id);
-        return new ResponseEntity<>(user, HttpStatus.OK);
-    }
-
-    @PutMapping("/resetPassword")
+    @PutMapping("/settings/passwords")
     public ResponseEntity<UserResponse> resetPassword(
             @RequestBody @Valid ResetPasswordRequest request) {
         UserResponse user = userService.resetPassword(request);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/settings/{id}")
     public ResponseEntity deleteUser(@PathVariable("id") long id) {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    //@PostMapping("/login")
-    //public  ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
-    //    AuthResponse user = userService.login(loginRequest);
-    //    return new ResponseEntity<>(user, HttpStatus.OK);
-    //}
-
     @GetMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestParam(value = "email")@NotNull String email,
-                                               @RequestParam(value = "password")@NotNull String password) {
+                                              @RequestParam(value = "password")@NotNull String password) {
         AuthResponse authResponse = userService.login(email, password);
         return new ResponseEntity<>(authResponse, HttpStatus.OK);
     }

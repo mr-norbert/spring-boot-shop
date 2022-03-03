@@ -185,43 +185,6 @@ class ReviewServiceTest {
         assertThat(result).isEqualTo(expectedResult);
     }
 
-    @Test
-    void testGetReviews() {
-
-        GetReviewsRequest request = new GetReviewsRequest();
-        request.setProductId(1L);
-        request.setRating(5);
-
-        Product product = new Product();
-        product.setId(1L);
-        product.setName("name");
-        product.setPrice(5.0);
-        product.setDescription("description");
-        product.setImagePath("imagePath");
-        product.setUnitInStock(90);
-       // product.setCreatedDate(LocalDate.now());
-        product.setCreatedBy("createdBy");
-        product.setLastModifiedBy("lastModifiedBy");
-
-        Review review = new Review();
-        review.setId(1L);
-        review.setProduct(product);
-        review.setRating(5);
-        Page<Review> reviews = new PageImpl<>(Collections.singletonList(review));
-        when(mockReviewRepository.findReviewsByProductIdAndRatingOrderByIdDesc
-                (eq(product.getId()), eq(5), any(Pageable.class))).thenReturn(reviews);
-
-        //when(mockReviewRepository.findReviewsByProductId(eq(product.getId()), any(Pageable.class))).thenReturn(reviews);
-
-        when(mockReviewMapper.entitiesToEntityDTOs(Collections.singletonList(review)))
-                .thenReturn(Collections.singletonList(new ReviewResponse()));
-
-        final Page<ReviewResponse> result = reviewServiceUnderTest.getReviews(request, PageRequest.of(0, 20));
-
-    }
-
-
-
 
 
 }

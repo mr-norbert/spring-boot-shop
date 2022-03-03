@@ -60,7 +60,7 @@ public class AuditEventService {
         SearchResult<PersistentAuditEvent> result = searchSession.search(PersistentAuditEvent.class)
                 .where(f -> f.match()
                         .fields(pathFields)
-                        .matching(getClientIP()))
+                        .matching(getClientIP()))//prototype
                 .fetch(20);
         List<PersistentAuditEvent> response = result.hits();
 

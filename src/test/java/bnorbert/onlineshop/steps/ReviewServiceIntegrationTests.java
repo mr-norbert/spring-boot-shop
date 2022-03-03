@@ -74,17 +74,7 @@ public class ReviewServiceIntegrationTests {
         assertThat(review.getId(), notNullValue());
     }
 
-    @Test
-    public void testGetReviews_thenReturnReviews() {
 
-        GetReviewsRequest request = new GetReviewsRequest();
-        request.setProductId(1L);
-        request.setRating(5);
-
-        Page<ReviewResponse> reviewResponses = reviewService.getReviews(request, Pageable.unpaged());
-        assertThat(reviewResponses, notNullValue());
-        assertTrue(reviewResponses.getSize() > 1);
-    }
 
 
 }

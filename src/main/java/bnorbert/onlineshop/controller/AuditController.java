@@ -28,8 +28,8 @@ public class AuditController {
         return new ResponseEntity(auditResponses, HttpStatus.OK);
     }
 
-    @GetMapping("/getMetadata")
-    public ResponseEntity<AuditResponse> getMetadata() {
+    @GetMapping("/search")
+    public ResponseEntity<AuditResponse> search() {
         List<AuditResponse> auditResponses = auditEventService.getMetadata();
         return new ResponseEntity(auditResponses, HttpStatus.OK);
     }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/roles")
+@RequestMapping("/badges")
 @CrossOrigin
 
 @AllArgsConstructor
@@ -21,30 +21,31 @@ public class RoleController {
 
     private final RoleService service;
 
-    @PostMapping
+    @PostMapping("/settings/roles")
     public ResponseEntity<Void> createRole(@RequestBody CreateRoleRequest request) {
         service.createRole(request);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PostMapping("/createPermission")
-    public ResponseEntity<Void> createPermission(@RequestBody CreatePermissionRequest request) {
-        service.createPermission(request);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PutMapping("/addRole")
+    @PutMapping("/settings/roles")
     public ResponseEntity<Void> addRoleToUser(
             @RequestBody @Valid AddToUserRequest request) {
         service.addRoleToUser(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PutMapping("/addPermissionToRole")
+    @PostMapping("/settings/permissions")
+    public ResponseEntity<Void> createPermission(@RequestBody CreatePermissionRequest request) {
+        service.createPermission(request);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PutMapping("/settings/permissions")
     public ResponseEntity<Void> addPermissionToRole(
             @RequestBody @Valid AddToRoleRequest request) {
         service.addPermissionToRole(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
 
 }

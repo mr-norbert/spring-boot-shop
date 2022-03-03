@@ -16,7 +16,9 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBi
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 @Entity
@@ -45,9 +47,8 @@ public class Review {
     @ManyToOne(fetch = FetchType.LAZY)
     private Product product;
 
-    //@ElementCollection
-    //@SortNatural
-    //private Map<String, String> predictions = new TreeMap<>();
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> comments = new HashSet<>();
 
     @ElementCollection
     @SortNatural

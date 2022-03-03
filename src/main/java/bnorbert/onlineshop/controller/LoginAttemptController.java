@@ -8,15 +8,15 @@ import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
 @RestController
-@RequestMapping("/loginAttempt")
+@RequestMapping("/mocks")
 
 @AllArgsConstructor
 public class LoginAttemptController {
 
     private final LoginAttemptService loginAttemptService;
 
-    @GetMapping("/mockLoginAttempts")
-    public ResponseEntity<Void> testLoginAttempts() {
+    @GetMapping
+    public ResponseEntity<Void> loginAttempts() {
         loginAttemptService.testLoginAttempts();
         return new ResponseEntity<>(HttpStatus.OK);
     }

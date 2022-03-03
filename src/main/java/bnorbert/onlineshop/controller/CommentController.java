@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
 import static org.springframework.http.HttpStatus.CREATED;
 
 @CrossOrigin
@@ -29,25 +27,25 @@ public class CommentController {
         return new ResponseEntity<>(CREATED);
     }
 
-    @GetMapping("/getCommentsByReview")
+    @GetMapping
     public ResponseEntity<Page<CommentResponse>> getCommentsByReview(
-            Long review_id, Pageable pageable) {
-        Page<CommentResponse> comments = commentService.getCommentsByReview(review_id, pageable);
+            Long reviewId, Pageable pageable) {
+        Page<CommentResponse> comments = commentService.getCommentsByReview(reviewId, pageable);
         return new ResponseEntity<>(comments, HttpStatus.OK);
     }
 
-    @GetMapping("/getCommentsForReview/{review_id}")
+    @GetMapping("/{reviewId}")
     public ResponseEntity<Page<CommentResponse>> getCommentsForReview(
-            @PathVariable("review_id") Long review_id,
-            @RequestParam Optional<Integer> page) {
-        return new ResponseEntity<>(commentService.getCommentsForReview(review_id, page.orElse(0)), HttpStatus.OK);
+            @PathVariable("reviewId") Long reviewId,
+            @RequestParam (name = "page", required = false, defaultValue = "0")Integer page) {
+        return new ResponseEntity<>(commentService.getCommentsForReview(reviewId, page), HttpStatus.OK);
     }
 
-    @GetMapping("/getCommentsByUserEmail/{email}")
+    @GetMapping("/emails/{email}")
     public ResponseEntity<Page<CommentResponse>> getCommentsByUserEmail(
             @PathVariable("email") String email,
-            @RequestParam Optional<Integer> page) {
-        return new ResponseEntity<>(commentService.getCommentsByUserEmail(email, page.orElse(0)), HttpStatus.OK);
+            @RequestParam (name = "page", required = false, defaultValue = "0")Integer page) {
+        return new ResponseEntity<>(commentService.getCommentsByUserEmail(email, page), HttpStatus.OK);
     }
 
 }

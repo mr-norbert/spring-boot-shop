@@ -17,19 +17,19 @@ import java.security.spec.InvalidKeySpecException;
 
 @CrossOrigin
 @RestController
-@RequestMapping("/AES")
+@RequestMapping("/aes")
 @AllArgsConstructor
 public class TestAESController {
 
     private final TestAESService testAESService;
 
-    @PostMapping("/createTest")
+    @PostMapping
     public ResponseEntity<Void> createText() throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
         testAESService.createText();
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @GetMapping("/getTextId/{id}")
+    @GetMapping("/decryption/{id}")
     public TestAES get(@PathVariable long id) {
         return testAESService.getText(id);
     }

@@ -575,6 +575,7 @@ public class ReviewService {
         reviewRepository.deleteById(id);
     }
 
+    /*
     public Page<ReviewResponse> getReviews(GetReviewsRequest request, Pageable pageable){
         log.info("Retrieving reviews: {}", request);
         Page<Review> reviews = null;
@@ -594,6 +595,7 @@ public class ReviewService {
         return new PageImpl<>(reviewResponses, pageable, reviews.getTotalElements());
     }
 
+     */
 
 
 }
