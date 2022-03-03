@@ -1,12 +1,12 @@
 package bnorbert.onlineshop.transfer.order;
 
-import org.springframework.data.domain.Page;
+import java.util.List;
 
 public class OrdersResponses {
 
-    public final Page<OrderResponse> orderResponses;
+    public final List<OrderResponse> orderResponses;
 
-    public OrdersResponses(Page<OrderResponse> orderResponses) {
+    public OrdersResponses(List<OrderResponse> orderResponses) {
         this.orderResponses = orderResponses;
     }
 }

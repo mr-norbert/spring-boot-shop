@@ -22,9 +22,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Component
 @Slf4j
+@Transactional
 public class OrderSteps {
     @Autowired
     private CartItemRepository cartItemRepository;
@@ -56,53 +59,53 @@ public class OrderSteps {
             identifier.setLength(product.getDescription().length());
             ordersWordsRepository.save(identifier);
 
-            OrderWord identifier_1 = new OrderWord();
-            identifier_1.setIndexOfWord(1);
-            identifier_1.setDocId(order.getId());
-            identifier_1.setWord(product.getBrandName());
-            identifier_1.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_1);
+            OrderWord identifier1 = new OrderWord();
+            identifier1.setIndexOfWord(1);
+            identifier1.setDocId(order.getId());
+            identifier1.setWord(product.getBrandName());
+            identifier1.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier1);
 
-            OrderWord identifier_2 = new OrderWord();
-            identifier_2.setIndexOfWord(2);
-            identifier_2.setDocId(order.getId());
-            identifier_2.setWord(product.getCategoryName());
-            identifier_2.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_2);
+            OrderWord identifier2 = new OrderWord();
+            identifier2.setIndexOfWord(2);
+            identifier2.setDocId(order.getId());
+            identifier2.setWord(product.getCategoryName());
+            identifier2.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier2);
 
-            OrderWord identifier_3 = new OrderWord();
-            identifier_3.setIndexOfWord(3);
-            identifier_3.setDocId(order.getId());
-            identifier_3.setWord(order.getCity());
-            identifier_3.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_3);
+            OrderWord identifier3 = new OrderWord();
+            identifier3.setIndexOfWord(3);
+            identifier3.setDocId(order.getId());
+            identifier3.setWord(order.getCity());
+            identifier3.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier3);
 
-            OrderWord identifier_4 = new OrderWord();
-            identifier_4.setIndexOfWord(4);
-            identifier_4.setDocId(order.getId());
-            identifier_4.setWord("email@.com");
-            identifier_4.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier_4);
+            OrderWord identifier4 = new OrderWord();
+            identifier4.setIndexOfWord(4);
+            identifier4.setDocId(order.getId());
+            identifier4.setWord("email@.com");
+            identifier4.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier4);
 
-            OrderWord _identifier = new OrderWord();
-            _identifier.setIndexOfWord(5);
-            _identifier.setDocId(order.getId());
-            _identifier.setWord(order.getId().toString());
-            _identifier.setLength(product.getDescription().length());
-            ordersWordsRepository.save(_identifier);
+            OrderWord identifier5 = new OrderWord();
+            identifier5.setIndexOfWord(5);
+            identifier5.setDocId(order.getId());
+            identifier5.setWord(order.getId().toString());
+            identifier5.setLength(product.getDescription().length());
+            ordersWordsRepository.save(identifier5);
 
-            System.out.println(_identifier.getWord());
-            System.out.println(identifier_4.getWord());
-            System.out.println(identifier_3.getWord());
-            System.out.println(identifier_2.getWord());
-            System.out.println(identifier_1.getWord());
-            System.out.println(identifier.getWord());
+            assertThat(identifier).isNotNull();
+            assertThat(identifier1).isNotNull();
+            assertThat(identifier2).isNotNull();
+            assertThat(identifier3).isNotNull();
+            assertThat(identifier4).isNotNull();
+            assertThat(identifier5).isNotNull();
         });
     }
 
-    private void getOrderDetails(List<CartItem> cartItemList, Order order) {
+    private void getOrderDetails(List<CartItem> cartItems, Order order) {
         log.info("Moving inventory " );
-        cartItemList.forEach( cartItem -> {
+        cartItems.forEach( cartItem -> {
 
             order.addCartItem(cartItem);
             Product product = cartItem.getProduct();
@@ -111,6 +114,7 @@ public class OrderSteps {
             cartItemRepository.save(cartItem);
         });
 
+        assertThat(cartItems).isNotEmpty();
     }
 
     private void updateStock(CartItem cartItem, Product product) {
@@ -126,17 +130,16 @@ public class OrderSteps {
     }
 
 
-    @Transactional
-    public void create() {
+    public String create() {
 
         List<Product> products = Stream
                 .generate(Product::new)
-                .limit(5)
+                .limit(1)
                 .collect(Collectors.toList());
 
-        List<Product> list = Stream
+        List<Product> products_ = Stream
                 .generate(Product::new)
-                .limit(3)
+                .limit(1)
                 .collect(Collectors.toList());
 
         List<Product> _products = Stream
@@ -145,16 +148,6 @@ public class OrderSteps {
                 .collect(Collectors.toList());
 
         List<Cart> users = Stream
-                .generate(Cart::new)
-                .limit(1)
-                .collect(Collectors.toList());
-
-        List<Cart> carts = Stream
-                .generate(Cart::new)
-                .limit(1)
-                .collect(Collectors.toList());
-
-        List<Cart> carts3 = Stream
                 .generate(Cart::new)
                 .limit(1)
                 .collect(Collectors.toList());
@@ -169,31 +162,7 @@ public class OrderSteps {
             cartRepository.save(cart);
         }
 
-        for(Cart cart : carts) {
-            User user = new User();
-            user.setId(2L);
-            userRepository.save(user);
-
-            cart.setId(2L);
-            cart.setUser(user);
-            cartRepository.save(cart);
-        }
-
-        for(Cart cart : carts3) {
-            User user = new User();
-            user.setId(3L);
-            userRepository.save(user);
-
-            cart.setId(3L);
-            cart.setUser(user);
-            cartRepository.save(cart);
-        }
-
         Cart cart = cartRepository.findByUser_Id(1L)
-                .orElseThrow(() -> new ResourceNotFoundException(""));
-        Cart cart2 = cartRepository.findByUser_Id(2L)
-                .orElseThrow(() -> new ResourceNotFoundException(""));
-        Cart cart3 = cartRepository.findByUser_Id(3L)
                 .orElseThrow(() -> new ResourceNotFoundException(""));
 
         for(Product newProduct : products) {
@@ -207,7 +176,7 @@ public class OrderSteps {
             productRepository.save(newProduct);
 
             AddProductToCartRequest toCartRequest = new AddProductToCartRequest();
-            toCartRequest.setProductQuantity(10);
+            toCartRequest.setProductQuantity(2);
             toCartRequest.setProductId(newProduct.getId());
 
             CartItem newCartItem = map(toCartRequest, cart, newProduct);
@@ -216,9 +185,14 @@ public class OrderSteps {
             cartItemRepository.save(newCartItem);
             cart.setGrandTotal(cart.getSum());
             cartRepository.save(cart);
+
+            assertTrue(newCartItem.getSubTotal() > 50d);
+            assertTrue(newCartItem.getSubTotal() < 150d);
+            assertThat(cart).isNotNull();
+            assertThat(newCartItem).isNotNull();
         }
 
-        for(Product newProduct : list) {
+        for(Product newProduct : products_) {
             newProduct.setCategoryName("string1");
             newProduct.setBrandName("string2");
             newProduct.setName("string3");
@@ -238,8 +212,12 @@ public class OrderSteps {
             cartItemRepository.save(newCartItem);
             cart.setGrandTotal(cart.getSum());
             cartRepository.save(cart);
-        }
 
+            assertTrue(newCartItem.getSubTotal() > 32d);
+            assertTrue(newCartItem.getSubTotal() < 65d);
+            assertThat(cart).isNotNull();
+            assertThat(newCartItem).isNotNull();
+        }
 
         for(Product newProduct : _products) {
             newProduct.setCategoryName("category_field");
@@ -255,45 +233,20 @@ public class OrderSteps {
             toCartRequest.setProductQuantity(1);
             toCartRequest.setProductId(newProduct.getId());
 
-            CartItem newCartItem = map(toCartRequest, cart2, newProduct);
+            CartItem newCartItem = map(toCartRequest, cart, newProduct);
             newCartItem.setSubTotal(newProduct.getPrice() * newCartItem.getQty());
-            cart2.addCartItem(newCartItem);
+            cart.addCartItem(newCartItem);
             cartItemRepository.save(newCartItem);
-            cart2.setGrandTotal(cart2.getSum());
-            cartRepository.save(cart2);
+            cart.setGrandTotal(cart.getSum());
+            cartRepository.save(cart);
+
+            assertTrue(newCartItem.getSubTotal() > 1d);
+            assertTrue(newCartItem.getSubTotal() < 11d);
+            assertThat(cart).isNotNull();
+            assertThat(newCartItem).isNotNull();
         }
 
-    }
-
-
-
-    @Transactional
-    public void createOrder() {
-        CreateAddressRequest request = new CreateAddressRequest();
-        request.setAddress("address");
-
-        Cart cart = cartRepository.findByUser_Id(1L)
-                .orElseThrow(() -> new ResourceNotFoundException(""));
-
-        User user = userRepository.findById(1L)
-                .orElseThrow(() -> new ResourceNotFoundException(""));
-
-        List<CartItem> lineItems = cartItemRepository.findByCart(cart);
-
-        Order order = new Order();
-        order.setId(1L);
-        order.setCity("London");
-        order.setAddress(request.getAddress());
-        order.setGrandTotal(cart.getSum());
-        order.setCreatedDate(LocalDateTime.now().minusYears(12));
-        order.setUser(user);
-        getOrderDetails(lineItems, order);
-
-        orderRepository.save(order);
-        System.err.println(cart.getGrandTotal() + " before");
-        cartService.clearCart(cart);
-
-        copyDetails(lineItems, order);
+        return "done";
     }
 
 
@@ -319,8 +272,7 @@ public class OrderSteps {
     }
 
 
-    @Transactional
-    public void getOrdersValidRequest() {
+    public List<Order> getOrdersValidRequest() {
 
         OrderRequest request = new OrderRequest();
         request.setYear(2000);
@@ -342,16 +294,14 @@ public class OrderSteps {
                     }
                 })).fetch(0, 4);
 
-        long totalHitCount = result.total().hitCount();
         List<Order> hits = result.hits();
 
-        assertThat(totalHitCount).isEqualTo(1);
         assertThat(hits).isNotEmpty();
+        return hits;
     }
 
 
-    @Transactional
-    public void getOrdersNotValidRequest() {
+    public List<Order> getOrdersNotValidRequest() {
 
         OrderRequest request = new OrderRequest();
         request.setYear(2050);
@@ -376,13 +326,50 @@ public class OrderSteps {
         long totalHitCount = result.total().hitCount();
         List<Order> hits = result.hits();
 
-        assertThat(totalHitCount).isEqualTo(1);
-        assertThat(hits).isNotEmpty();
+        assertThat(totalHitCount).isZero();
+        return hits;
+    }
+
+    public Order createOrder() {
+        CreateAddressRequest request = new CreateAddressRequest();
+        request.setAddress("address");
+
+        Cart cart = cartRepository.findByUser_Id(1L)
+                .orElseThrow(() -> new ResourceNotFoundException(""));
+
+        User user = userRepository.findById(1L)
+                .orElseThrow(() -> new ResourceNotFoundException(""));
+
+        List<CartItem> lineItems = cartItemRepository.findByCart(cart);
+
+        Order order = new Order();
+        order.setId(1L);
+        order.setCity("London");
+        order.setAddress(request.getAddress());
+        order.setGrandTotal(cart.getSum());
+        order.setCreatedDate(LocalDateTime.now().minusYears(12));
+        order.setStatus(OrderStatusEnum.TEST);
+        order.setUser(user);
+        getOrderDetails(lineItems, order);
+
+        orderRepository.save(order);
+        log.debug(cart.getGrandTotal() + " before");
+        cartService.clearCart(cart);
+
+        copyDetails(lineItems, order);
+
+        assertThat(order).isNotNull();
+        assertThat(request.getAddress()).isEqualTo("address");
+        assertThat(order.getCity()).isEqualTo("London");
+        assertThat(order).isNotNull();
+        assertEquals(0d, cart.getGrandTotal(), 0.0);
+
+        return order;
     }
 
 
-    @Transactional
-    public void getViewOverCarts(){
+
+    public List<Cart> getViewOverCarts(){
 
         String categoryName = "category_field";
         double lowerBound = 1;
@@ -404,8 +391,10 @@ public class OrderSteps {
                                 ))
                 ).fetchHits( 40 );
 
-        System.err.println(hits.stream().map(Cart::getGrandTotal).collect(Collectors.toList()));
-        assertThat((long) hits.size()).isEqualTo(2);
+        log.debug(String.valueOf(hits.stream().map(Cart::getGrandTotal).collect(Collectors.toList())));
+        assertThat(hits.size()).isPositive();
         assertThat(hits).isNotEmpty();
+
+        return hits;
     }
 }

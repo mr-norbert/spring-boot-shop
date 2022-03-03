@@ -181,7 +181,7 @@ public class OrderService {
         });
     }
 
-    public OrdersResponses getOrders(OrderRequest request, String query, Pageable pageable, OrderTypeEnum orderType, int pageNumber) {
+    public OrdersResponses getOrders(OrderRequest request, String query, OrderTypeEnum orderType, int pageNumber) {
         log.info("Retrieving orders");
         long numberOfDocs = orderRepository.count();
         String[] words = query.split(" ");
@@ -215,29 +215,32 @@ public class OrderService {
         Map<Long, Double> sortedMap = sortByValueReversed(hashMap);
         log.info(sortedMap + " sortedmap");
 
-        Set<Long> idSet = new LinkedHashSet<>(sortedMap.keySet());
+        Set<Long> ids = new LinkedHashSet<>(sortedMap.keySet());
         List<Order> result = new ArrayList<>();
-        if(!idSet.isEmpty()) {
-            for (Long orderId : idSet) {
-                Order order = getOrder(orderId);
-                result.add(order);
+        if(!ids.isEmpty()) {
+            for (Long orderId : ids) {
+                Optional<Order> order = orderRepository.findById(orderId);
+                order.ifPresent(result::add);
+            }if(result.isEmpty()){
+                throw new ResourceNotFoundException("empty list");
             }
         }else {
-            throw new ResourceNotFoundException("empty list" );
+            throw new ResourceNotFoundException("ids not found");
         }
 
-        return getOrdersResponses(request, pageable, orderType, pageNumber, idSet, result);
+        return getOrdersResponses(request, orderType, pageNumber, ids, result);
     }
 
-    private OrdersResponses getOrdersResponses(OrderRequest request, Pageable pageable,
-                                               OrderTypeEnum orderType, int pageNumber,
-                                               Set<Long> idSet, List<Order> result) {
+    private OrdersResponses getOrdersResponses(OrderRequest request, OrderTypeEnum orderType,
+                                               int pageNumber, Set<Long> ids,
+                                               List<Order> result
+    ) {
         if (orderType == OrderTypeEnum.BETWEEN) {
             SearchSession searchSession = Search.session(entityManager);
             SearchResult<Order> searchResult = searchSession.search(Order.class)
                     .where(f -> f.bool(b -> {
                         b.must(f.id()
-                                .matchingAny(idSet));
+                                .matchingAny(ids));
                         if (request != null && request.getYear() != null && request.getMonth() != null && request.getDay() != null &&
                                 request.get_year() != null && request.get_month() != null && request.get_day() != null) {
                             b.must(f.range()
@@ -256,9 +259,7 @@ public class OrderService {
 
             List<OrderResponse> response = orderMapper.entitiesToDTOs(orders);
 
-            return new OrdersResponses(Optional.of(response)
-                    .map(search -> new PageImpl<>(response, pageable, totalHitCount))
-                    .orElseThrow(() -> new ResourceNotFoundException("")));
+            return new OrdersResponses(Optional.of(response).orElseThrow(() -> new ResourceNotFoundException("OrderType.BETWEEN issue")));
         }
 
         if (orderType == OrderTypeEnum.TEST) {
@@ -266,10 +267,10 @@ public class OrderService {
             SearchResult<Order> searchResult = searchSession.search(Order.class)
                     .where(f -> f.bool(b -> {
                         b.must(f.id()
-                                .matchingAny(idSet));
+                                .matchingAny(ids));
                         b.must(f.match()
                                 .field("status")
-                                .matching(OrderStatusEnum.COMPLETED));
+                                .matching(OrderStatusEnum.TEST));
 
                     })).fetch(4 * pageNumber, 4);
 
@@ -281,11 +282,13 @@ public class OrderService {
             }
             List<OrderResponse> response = orderMapper.entitiesToDTOs(orders);
 
-            return new OrdersResponses(Optional.of(response)
-                    .map(search -> new PageImpl<>(response, pageable, totalHitCount))
-                    .orElseThrow(() -> new ResourceNotFoundException("")));
+            return new OrdersResponses(Optional.of(response).orElseThrow(() -> new ResourceNotFoundException("status issue")));
         }
 
+        return lastStep(pageNumber, result);
+    }
+
+    private OrdersResponses lastStep(int pageNumber, List<Order> result) {
         List<OrderResponse> response = orderMapper.entitiesToDTOs(result);
 
         int pageSize = 2;
@@ -294,10 +297,8 @@ public class OrderService {
             throw new ResourceNotFoundException("");
         }
         AtomicInteger atomicInteger = new AtomicInteger(pageNumber);
-        return new OrdersResponses(Optional.of(response)
-                .map(search -> new PageImpl<>
-                        (response.subList(pageNumber * pageSize, Math.min(atomicInteger.incrementAndGet() * pageSize, response.size())), pageable, response.size()))
-                .orElseThrow(() -> new ResourceNotFoundException("")));
+        return new OrdersResponses(Optional.of(response.subList(pageNumber * pageSize, Math.min(atomicInteger.incrementAndGet() * pageSize, response.size())))
+                .orElseThrow(() -> new ResourceNotFoundException("lastStep issue")));
     }
 
     private Map<Long, Double> sortByValueReversed(Map<Long, Double> map) {
