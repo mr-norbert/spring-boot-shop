@@ -14,9 +14,7 @@ import bnorbert.onlineshop.mapper.ProductMapper;
 import bnorbert.onlineshop.repository.BundleRepository;
 import bnorbert.onlineshop.repository.ProductRepository;
 import bnorbert.onlineshop.repository.QueriesRepository;
-import bnorbert.onlineshop.transfer.product.CreateProductRequest;
-import bnorbert.onlineshop.transfer.product.ProductResponse;
-import bnorbert.onlineshop.transfer.product.UpdateResponse;
+import bnorbert.onlineshop.transfer.product.*;
 import bnorbert.onlineshop.transfer.search.HibernateSearchResponse;
 import bnorbert.onlineshop.transfer.search.SearchRequest;
 import bnorbert.onlineshop.transfer.search.SearchResponse;
@@ -25,14 +23,11 @@ import org.hibernate.search.engine.search.aggregation.AggregationKey;
 import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.hibernate.search.engine.search.query.SearchResult;
-import org.hibernate.search.engine.search.query.SearchResultTotal;
 import org.hibernate.search.engine.search.sort.dsl.SortOrder;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.hibernate.search.util.common.SearchTimeoutException;
 import org.hibernate.search.util.common.data.Range;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,21 +101,20 @@ public class ProductService {
         return productMapper.mapToProductResponse(product);
     }
 
-    public ProductResponse bindThem(Long productId) {
+    public ProductResponse bindThem(long productId, BinderRequest request) {
         log.info("Retrieving product: " + productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException(""));
 
-        String name = "Christmas";
         Bundle newBundle = new Bundle();
-        Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(name, productId);
+        Optional<Bundle> bundle = bundleRepository.findTop1ByNameAndProductId(request.getName().toLowerCase(), productId);
         if (bundle.isPresent()) {
             throw new ResourceNotFoundException("");
         } else {
-            newBundle.setName(name);
+            newBundle.setName(request.getName().toLowerCase());
             newBundle.setProduct(product);
             Map<Bundle, Double> linkedHashMap = new LinkedHashMap<>();
-            linkedHashMap.put(newBundle, product.getPrice() - 5.99D);
+            linkedHashMap.put(newBundle, product.getPrice() - (product.getPrice() * (request.getPercentage() / 100d)));
             product.setPriceByBundle(linkedHashMap);
         }
         bundleRepository.save(newBundle);
@@ -141,17 +135,17 @@ public class ProductService {
         return string.replaceAll("[\\p{C}]", "");
     }
 
-    public void christmasQuery() {
+    public List<ProductResponse> getDeals(String query, int pageNumber) {
         log.info("Retrieving products");
         SearchSession searchSession = org.hibernate.search.mapper.orm.Search.session(entityManager);
         SearchResult<Product> searchResult = searchSession.search(Product.class)
                 .where(f -> f.match()
                         .field("bundleForSale")
-                        .matching("Christmas"))
-                .fetch(20);
-        List<Product> result = searchResult.hits();
+                        .matching(query))
+                .fetch(pageNumber * 10, 10);
 
-        log.debug(String.valueOf(result.stream().map(Product::getId).collect(Collectors.toList())));
+        List<Product> response = searchResult.hits();
+        return productMapper.entitiesToEntityDTOs(response);
     }
 
     public ProductResponse getProductId(Long id) {
@@ -217,7 +211,7 @@ public class ProductService {
         return xfHeader.split(",")[0];
     }
 
-    public String getAnswers(String query, long productId) throws IOException, TranslateException, ModelException {
+    public String getAnswers(long productId, QuestionRequest request) throws IOException, TranslateException, ModelException {
         /*
         try
         how ...?
@@ -229,7 +223,7 @@ public class ProductService {
         Product product = getProduct(productId);
         String context = product.getDescription();
 
-        QAInput input = new QAInput(query, context);
+        QAInput input = new QAInput(request.getQuestion(), context);
         log.info("Paragraph: {}", input.getParagraph());
         log.info("Paragraph length: {}", input.getParagraph().length());
         log.info("Question: {}", input.getQuestion());
@@ -250,7 +244,7 @@ public class ProductService {
         }
     }
 
-    public HibernateSearchResponse getSearchBar(String input, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
+    public HibernateSearchResponse getSearchBar(String input, ProductSortTypeEnum sortType, int pageNumber) {
         log.info("Retrieving products. sortType : {} ", sortType);
 
         try {
@@ -335,28 +329,27 @@ public class ProductService {
 
             List<Product> products = result.hits();
             List<ProductResponse> response = productMapper.entitiesToEntityDTOs(products);
-
-            return new HibernateSearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand,
-                    Optional.of(response).map(search -> new PageImpl<>
-                            (response, pageable, totalHitCount)).orElseThrow(() -> new ResourceNotFoundException("")));
+            return new HibernateSearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand, response);
 
         }catch (SearchTimeoutException ignored){
             log.debug("SearchTimeout " + getClientIP());
         }
 
+        return getTimeoutResponse();
+    }
+
+    private HibernateSearchResponse getTimeoutResponse() {
         Map<Range<Double>, Long> price = new HashMap<>();
         Map<String, Long> color = new HashMap<>();
         Map<String, Long> category = new HashMap<>();
         Map<String, Long> brand = new HashMap<>();
         List<ProductResponse> mockResponse = new ArrayList<>();
 
-        return new HibernateSearchResponse(price, color, category, brand,
-                Optional.of(mockResponse).map(search -> new PageImpl<>
-                        (mockResponse, pageable, 0)).orElseThrow(() -> new ResourceNotFoundException("")));
+        return new HibernateSearchResponse(price, color, category, brand, mockResponse);
     }
 
 
-    public HibernateSearchResponse getSearchBox(SearchRequest request, ProductSortTypeEnum sortType, int pageNumber, Pageable pageable) {
+    public HibernateSearchResponse getSearchBox(SearchRequest request, ProductSortTypeEnum sortType, int pageNumber) {
         log.info("Retrieving products. sortType : {} ", sortType);
 
         try {
@@ -406,7 +399,6 @@ public class ProductService {
                     .fetch(pageNumber * 4, 4);
 
             long totalHitCount = result.total().hitCount();
-
             int lastPage = (int) (totalHitCount / 4);
             if(pageNumber > lastPage){
                 throw new ResourceNotFoundException("");
@@ -420,23 +412,12 @@ public class ProductService {
             List<Product> products = result.hits();
             List<ProductResponse> response = productMapper.entitiesToEntityDTOs(products);
 
-            return new HibernateSearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand,
-                    Optional.of(response).map(search -> new PageImpl<>
-                            (response, pageable, totalHitCount)).orElseThrow(() -> new ResourceNotFoundException("")));
+            return new HibernateSearchResponse(countByPriceRange, countsByColor, countsByCategory, countsByBrand, response);
 
         }catch (SearchTimeoutException ignored){
             log.debug("SearchTimeout " + getClientIP());
         }
-
-        Map<Range<Double>, Long> price = new HashMap<>();
-        Map<String, Long> color = new HashMap<>();
-        Map<String, Long> category = new HashMap<>();
-        Map<String, Long> brand = new HashMap<>();
-        List<ProductResponse> mockResponse = new ArrayList<>();
-
-        return new HibernateSearchResponse(price, color, category, brand,
-                Optional.of(mockResponse).map(search -> new PageImpl<>
-                        (mockResponse, pageable, 0)).orElseThrow(() -> new ResourceNotFoundException("")));
+        return getTimeoutResponse();
     }
 
     private void myRequest(SearchRequest request, SearchPredicateFactory predicateFactory, BooleanPredicateClausesStep<?> booleanPredicateClausesStep) {
