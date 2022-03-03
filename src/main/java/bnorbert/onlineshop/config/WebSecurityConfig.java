@@ -13,9 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.firewall.StrictHttpFirewall;
-
-import java.util.Arrays;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -37,8 +34,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         //http.csrf().disable()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET,
-                        "/", "/v2/api-docs", "/webjars/**", "/swagger-resources/**",
-                        "/configuration/**", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js").permitAll()
+                        "/", "/v3/api-docs", "/webjars/**", "/swagger-resources/**",
+                        "/configuration/**", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/api-docs/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/users/create").permitAll()
                 .antMatchers("/users/login/**").permitAll()
                 .antMatchers(HttpMethod.POST,"/users/confirmUser").permitAll()
@@ -54,17 +51,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
-    //@Bean
-    //public HttpTraceRepository httpTraceRepository() {
-    //    return new InMemoryHttpTraceRepository();
-    //}
-
+    /*
     @Bean
     public StrictHttpFirewall httpFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
         firewall.setAllowedHttpMethods(Arrays.asList("GET", "POST", "PUT"));
         return firewall;
     }
+
+     */
 
     @Bean
     public PasswordEncoder passwordEncoder() {
