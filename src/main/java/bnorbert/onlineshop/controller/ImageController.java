@@ -1,8 +1,5 @@
 package bnorbert.onlineshop.controller;
 
-import ai.djl.MalformedModelException;
-import ai.djl.repository.zoo.ModelNotFoundException;
-import ai.djl.translate.TranslateException;
 import bnorbert.onlineshop.service.ImageService;
 import bnorbert.onlineshop.transfer.product.ImageResponse;
 import org.springframework.core.io.Resource;
@@ -14,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,17 +25,16 @@ public class ImageController {
         this.imageService = imageService;
     }
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/internals{productId}/creators", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
-    public ImageResponse uploadImage(//@RequestPart
-                                     @RequestParam("file") MultipartFile file,
-                                     @RequestParam("productId") long productId) throws IOException, TranslateException, ModelNotFoundException, MalformedModelException {
+    public ImageResponse uploadImage(@RequestPart("file") MultipartFile file,
+                                     @PathVariable("productId") long productId) {
         imageService.createImage(file, productId);
         return new ImageResponse(file.getOriginalFilename(), file.getContentType());
     }
 
-    @GetMapping("/getImages/matchPathFields")
-    public ResponseEntity<Void> getImages(@RequestParam(value = "query") String query){
+    @GetMapping("/search")
+    public ResponseEntity<Void> getImages(@RequestParam(value = "q") String query){
         imageService.getImages(query);
         return new ResponseEntity<>(HttpStatus.OK);
     }

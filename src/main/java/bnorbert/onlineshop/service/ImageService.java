@@ -85,7 +85,7 @@ public class ImageService implements FileStorageService{
         return imageRepository.findByProductIdAndPhoto(id, bytes).isPresent();
     }
 
-    public void createImage(MultipartFile file, long productId) throws IOException, ModelNotFoundException, MalformedModelException, TranslateException {
+    public void createImage(MultipartFile file, long productId) {
         log.info("Creating image");
         Image image = new Image();
         try {
@@ -96,43 +96,54 @@ public class ImageService implements FileStorageService{
         image.setOriginalFilename(file.getOriginalFilename());
         image.setSize(file.getSize());
         image.setCreatedDate(LocalDateTime.now());
-        if (imageExists(productId, file.getBytes())) {
-            throw new IllegalArgumentException("Image is present");
+        try {
+            if (imageExists(productId, file.getBytes())) {
+                throw new ResourceNotFoundException("Image is present");
+            }
+        } catch (IOException e) {
+            throw new ResourceNotFoundException(e.getMessage());
         }
         Product product = productService.getProduct(productId);
         image.setProduct(product);
 
-        InputStream inputStream = new ByteArrayInputStream(file.getBytes());
-        BufferedImage bufferedImage = ImageIO.read(inputStream);
-        ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
+        try {
+            InputStream inputStream = new ByteArrayInputStream(file.getBytes());
+            BufferedImage bufferedImage = ImageIO.read(inputStream);
+            ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
 
-        Criteria<ai.djl.modality.cv.Image, DetectedObjects> criteria =
-                Criteria.builder()
-                        .optApplication(Application.CV.OBJECT_DETECTION)
-                        .setTypes(ai.djl.modality.cv.Image.class, DetectedObjects.class)
-                        //.optModelUrls(modelUrl)
-                        //.optModelName("ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model")
-                        //.optTranslator(new MyTranslator())
-                        .optFilter("backbone", "mobilenet_v2")
-                        .optEngine("TensorFlow")
-                        .optProgress(new ProgressBar())
-                        .build();
+            Criteria<ai.djl.modality.cv.Image, DetectedObjects> criteria =
+                    Criteria.builder()
+                            .optApplication(Application.CV.OBJECT_DETECTION)
+                            .setTypes(ai.djl.modality.cv.Image.class, DetectedObjects.class)
+                            //.optModelUrls(modelUrl)
+                            //.optModelName("ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model")
+                            //.optTranslator(new MyTranslator())
+                            .optFilter("backbone", "mobilenet_v2")
+                            .optEngine("TensorFlow")
+                            .optProgress(new ProgressBar())
+                            .build();
 
-        try (ZooModel<ai.djl.modality.cv.Image, DetectedObjects> model = criteria.loadModel();
-             Predictor<ai.djl.modality.cv.Image, DetectedObjects> predictor = model.newPredictor()) {
-            DetectedObjects detection = predictor.predict(img);
-            log.info(detection.best().getClassName().toLowerCase());
-            log.info(String.valueOf(detection.best().getProbability()));
-            saveBoundingBoxImage(img, detection);
+            try (ZooModel<ai.djl.modality.cv.Image, DetectedObjects> model = criteria.loadModel();
+                 Predictor<ai.djl.modality.cv.Image, DetectedObjects> predictor = model.newPredictor()) {
 
-            Map<String, String> words = new TreeMap<>();
-            words.put("name", product.getName());
-            words.put("category", product.getCategoryName());
-            words.put("brand", product.getBrandName());
-            words.put("detection", detection.best().getClassName().toLowerCase());
-            image.setWords(words);
-            log.info("Binder: {}", words);
+                DetectedObjects detection = predictor.predict(img);
+                //log.info(detection.best().getClassName().toLowerCase());
+                //log.info(String.valueOf(detection.best().getProbability()));
+                Map<String, String> words = new TreeMap<>();
+                words.put("name", product.getName());
+                words.put("category", product.getCategoryName());
+                words.put("brand", product.getBrandName());
+                if(detection.best().getClassName() != null) {
+                    words.put("detection", detection.best().getClassName().toLowerCase());
+                }
+                image.setWords(words);
+                log.info("Binder: {}", words);
+                saveBoundingBoxImage(img, detection);
+            }
+        } catch (IOException | TranslateException | ModelNotFoundException | MalformedModelException | NoSuchElementException e) {
+            throw new ResourceNotFoundException(e.getMessage());
         }
+
         imageRepository.save(image);
     }
 
