@@ -36,11 +36,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET,
                         "/", "/v3/api-docs", "/webjars/**", "/swagger-resources/**",
                         "/configuration/**", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/api-docs/**").permitAll()
-                .antMatchers(HttpMethod.POST, "/users/create").permitAll()
+                .antMatchers(HttpMethod.POST, "/users").permitAll()
                 .antMatchers("/users/login/**").permitAll()
-                .antMatchers(HttpMethod.POST,"/users/confirmUser").permitAll()
-                .antMatchers(HttpMethod.POST,"/users/resendToken").permitAll()
-                .antMatchers(HttpMethod.PUT,"/roles/addRole").hasRole("ADMIN")
+                .antMatchers(HttpMethod.POST,"/users/settings/confirmation").permitAll()
+                .antMatchers(HttpMethod.POST,"/users/settings/tokens").permitAll()
+                .antMatchers(HttpMethod.POST,"/badges/settings/roles").hasRole("ADMIN")
+                .antMatchers(HttpMethod.PUT,"/badges/settings/roles").hasRole("ADMIN")
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

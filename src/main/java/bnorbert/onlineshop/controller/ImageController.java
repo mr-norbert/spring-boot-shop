@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @CrossOrigin
@@ -25,12 +26,19 @@ public class ImageController {
         this.imageService = imageService;
     }
 
-    @PostMapping(value = "/internals{productId}/creators", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/internals/{productId}/creators", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
     public ImageResponse uploadImage(@RequestPart("file") MultipartFile file,
                                      @PathVariable("productId") long productId) {
         imageService.createImage(file, productId);
         return new ImageResponse(file.getOriginalFilename(), file.getContentType());
+    }
+
+    @PostMapping(value = "/internals/detection", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<Set<String>> detectWords(@RequestPart("file") MultipartFile file) {
+        Set<String> response = imageService.detectWords(file);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/search")
