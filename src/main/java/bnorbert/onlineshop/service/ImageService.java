@@ -35,9 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -117,8 +115,10 @@ public class ImageService implements FileStorageService{
 
         try {
             InputStream inputStream = new ByteArrayInputStream(file.getBytes());
-            BufferedImage bufferedImage = ImageIO.read(inputStream);
-            ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
+            //BufferedImage bufferedImage = ImageIO.read(inputStream);
+            //ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
+            ImageFactory factory = ImageFactory.getInstance();
+            ai.djl.modality.cv.Image img = factory.fromInputStream(inputStream);
 
             Criteria<ai.djl.modality.cv.Image, DetectedObjects> criteria =
                     Criteria.builder()
@@ -165,14 +165,16 @@ public class ImageService implements FileStorageService{
         log.info("Detected objects image has been saved in: {}", imagePath);
     }
 
-    public Set<String> detectWords(MultipartFile file) {
+    public List<String> opticalCharacterRecognition(MultipartFile file) {
         log.info("Detecting words");
-        Set<String> names = new LinkedHashSet<>();
+        List<String> words = new ArrayList<>();
 
         try {
             InputStream inputStream = new ByteArrayInputStream(file.getBytes());
-            BufferedImage bufferedImage = ImageIO.read(inputStream);
-            ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
+            //BufferedImage bufferedImage = ImageIO.read(inputStream);
+            //ai.djl.modality.cv.Image img = ImageFactory.getInstance().fromImage(bufferedImage);
+            ImageFactory factory = ImageFactory.getInstance();
+            ai.djl.modality.cv.Image img = factory.fromInputStream(inputStream);
 
             List<DetectedObjects.DetectedObject> boxes = detectWords(img).items();
             Predictor<ai.djl.modality.cv.Image, String> recognizer = getRecognizer();
@@ -187,16 +189,16 @@ public class ImageService implements FileStorageService{
                 if ("Rotate".equals(result.getClassName()) && result.getProbability() > 0.8) {
                     subImg = rotateImg(subImg);
                 }
-                String name = recognizer.predict(subImg);
-                extractToDetectRealNames(name);
-                names.add(name);
+                String word = recognizer.predict(subImg);
+                detectRealNames(word);
+                words.add(word);
             }
 
         } catch (ModelException | TranslateException | IOException e) {
             throw new ResourceNotFoundException(e.getMessage());
         }
 
-        return names;
+        return words;
     }
 
     private DetectedObjects detectWords(ai.djl.modality.cv.Image img)
@@ -245,7 +247,7 @@ public class ImageService implements FileStorageService{
         }
     }
 
-    private static ai.djl.modality.cv.Image getSubImage(ai.djl.modality.cv.Image img, BoundingBox box) {
+    private ai.djl.modality.cv.Image getSubImage(ai.djl.modality.cv.Image img, BoundingBox box) {
         Rectangle rect = box.getBounds();
         double[] extended = extendRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
         int width = img.getWidth();
@@ -259,7 +261,7 @@ public class ImageService implements FileStorageService{
         return img.getSubImage(recovered[0], recovered[1], recovered[2], recovered[3]);
     }
 
-    private static double[] extendRect(double xmin, double ymin, double width, double height) {
+    private double[] extendRect(double xmin, double ymin, double width, double height) {
         double centerx = xmin + width / 2;
         double centery = ymin + height / 2;
         if (width > height) {
@@ -277,7 +279,7 @@ public class ImageService implements FileStorageService{
     }
 
 
-    private void extractToDetectRealNames(String name) {
+    private void detectRealNames(String name) {
         File initialFile = new File("src/main/resources/en-ner-person.bin");
         try(InputStream modelIn = new FileInputStream(initialFile)){
             List<String> names = new ArrayList<>();
@@ -286,16 +288,17 @@ public class ImageService implements FileStorageService{
 
             SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
             String[] tokens = tokenizer.tokenize(name);
+            log.info(Arrays.toString(tokens));
 
             Span[] namSpans = nameFinder.find(tokens);
-            for(Span span : namSpans){
+            for (Span span : namSpans) {
                 StringBuilder builder = new StringBuilder();
-                for(int i = span.getStart(); i < span.getEnd(); i++){
+                for (int i = span.getStart(); i < span.getEnd(); i++) {
                     builder.append(tokens[i]).append("+");
                 }
                 names.add(builder.toString());
             }
-            log.info("Pearson names : " + names);
+            log.info("Pearson : " + names);
 
         } catch (IOException e) {
             throw new ResourceNotFoundException(e.getMessage());

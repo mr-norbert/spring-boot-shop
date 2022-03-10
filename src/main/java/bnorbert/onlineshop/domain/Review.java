@@ -34,6 +34,7 @@ public class Review {
     private int rating;
     private String intent;
     //@ColumnTransformer(read = "AES_DECRYPT(UNHEX(content), 'body')", write = "HEX(AES_ENCRYPT(?, 'body'))")
+    //@Lob
     private String content;
     private Instant createdDate;
     private int predictedRating;

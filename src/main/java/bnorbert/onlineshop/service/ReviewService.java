@@ -5,6 +5,7 @@ import ai.djl.Device;
 import ai.djl.MalformedModelException;
 import ai.djl.Model;
 import ai.djl.engine.Engine;
+import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.djl.inference.Predictor;
 import ai.djl.modality.Classifications;
 import ai.djl.modality.nlp.DefaultVocabulary;
@@ -25,6 +26,8 @@ import ai.djl.nn.norm.Dropout;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelNotFoundException;
 import ai.djl.repository.zoo.ZooModel;
+import ai.djl.sentencepiece.SpTokenizer;
+import ai.djl.training.util.DownloadUtils;
 import ai.djl.training.util.ProgressBar;
 import ai.djl.translate.Batchifier;
 import ai.djl.translate.TranslateException;
@@ -55,6 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -122,8 +126,51 @@ public class ReviewService {
             SentenceModel model = new SentenceModel(modelIn);
             SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
             sentences = sentenceDetector.sentDetect(review.getContent());
+
+            discoverTokenizers(sentences);
         }
         return String.join("\n", sentences);
+    }
+
+    private void discoverTokenizers(String[] sentences) throws IOException {
+        try (HuggingFaceTokenizer huggingFaceTokenizer = HuggingFaceTokenizer.newInstance("bert-base-cased")) {
+            for (String s : sentences) {
+                List<String> tokens = huggingFaceTokenizer.tokenize(s);
+                for(String token : tokens){
+                    log.info(token);
+                }
+            }
+        }
+
+        Path modelPath = Paths.get("build/test/sp_model/sp_model.model");
+        byte[] bytes = Files.readAllBytes(modelPath);
+        try (SpTokenizer tokenizer = new SpTokenizer(bytes)) {
+            for (String sentence : sentences) {
+                List<String> tokens = tokenizer.tokenize(sentence);
+                for(String token : tokens){
+                    log.info(token);
+                }
+                recoveredTokens(tokens);
+            }
+        }
+    }
+
+    private void recoveredTokens(List<String> tokens) throws IOException {
+        Path modelPath = Paths.get("build/test/sp_model/sp_model.model");
+        byte[] bytes = Files.readAllBytes(modelPath);
+        try (SpTokenizer tokenizer = new SpTokenizer(bytes)) {
+            String recovered = tokenizer.buildSentence(tokens);
+            log.info("Build sentence : "+ recovered);
+        }
+    }
+
+    private void downloadSentencePieceModel() throws IOException {
+        Path modelFile = Paths.get("build/test/sp_model/sp_model.model");
+        if (Files.notExists(modelFile)) {
+            DownloadUtils.download(
+                    "https://resources.djl.ai/test-models/sententpiece_test_model.model",
+                    "build/test/sp_model/sp_model.model");
+        }
     }
 
     public String languageDetector(long id) throws IOException {

@@ -31,7 +31,7 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> createReview(//@RequestBody
+    public ResponseEntity<Void> createReview(@RequestBody
                                              @Valid CreateReviewRequest request)
             throws TranslateException, ModelNotFoundException, MalformedModelException, IOException {
         reviewService.createReview(request);

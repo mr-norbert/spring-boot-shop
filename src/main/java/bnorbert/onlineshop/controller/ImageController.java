@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @CrossOrigin
@@ -36,8 +35,8 @@ public class ImageController {
 
     @PostMapping(value = "/internals/detection", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
-    public ResponseEntity<Set<String>> detectWords(@RequestPart("file") MultipartFile file) {
-        Set<String> response = imageService.detectWords(file);
+    public ResponseEntity<List<String>> opticalCharacterRecognition(@RequestPart("file") MultipartFile file) {
+        List<String> response = imageService.opticalCharacterRecognition(file);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

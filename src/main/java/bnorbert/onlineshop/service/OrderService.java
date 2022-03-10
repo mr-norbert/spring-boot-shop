@@ -1,5 +1,6 @@
 package bnorbert.onlineshop.service;
 
+import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import bnorbert.onlineshop.domain.*;
 import bnorbert.onlineshop.exception.ResourceNotFoundException;
 import bnorbert.onlineshop.mapper.CartMapper;
@@ -15,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +23,8 @@ import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Transactional
@@ -88,27 +89,27 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException
                         ( "There is no cart for user " + userService.getCurrentUser().getId() ));
 
-        List<CartItem> cartItemList = cartItemRepository.findByCart(cart);
+        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
 
         Order order = OrderBuilder.createOrder( o -> {
             o.forUser(userService.getCurrentUser());
             o.toAddress(request);
         });
 
-        getOrderDetails(cartItemList, order);
+        getOrderDetails(cartItems, order);
 
         order.setGrandTotal(cart.getSum());
         orderRepository.save(order);
         cartService.clearCart(cart);
 
-        copyDetails(cartItemList, order);
+        copyDetails(cartItems, order);
     }
 
 
-    private void getOrderDetails(List<CartItem> cartItemList, Order order) {
+    private void getOrderDetails(List<CartItem> cartItems, Order order) {
         log.info("Moving inventory ");
 
-        cartItemList.forEach( cartItem -> {
+        cartItems.forEach( cartItem -> {
             order.addCartItem(cartItem);
             Product product = cartItem.getProduct();
             updateStock(cartItem, product);
@@ -130,19 +131,32 @@ public class OrderService {
         }
     }
 
-    private void copyDetails(List<CartItem> cartItemList, Order order) {
+    private void copyDetails(List<CartItem> cartItems, Order order) {
         log.info("Splitter ");
 
-        cartItemList.forEach(cartItem -> {
+        cartItems.forEach(cartItem -> {
 
             Product product = cartItem.getProduct();
 
-            OrderWord identifier = new OrderWord();
-            identifier.setIndexOfWord(0);
-            identifier.setDocId(order.getId());
-            identifier.setWord(product.getName());
-            identifier.setLength(product.getDescription().length());
-            ordersWordsRepository.save(identifier);
+            try (HuggingFaceTokenizer tokenizer = HuggingFaceTokenizer.newInstance("bert-base-cased")) {
+                List<String> tokens = tokenizer.tokenize(product.getName().toLowerCase());
+                String regex = "##";
+                Pattern pattern = Pattern.compile(regex);
+                List<String> filtered =  tokens.stream()
+                        .filter(start -> !start.equals("[CLS]"))
+                        .filter(end -> !end.equals("[SEP]"))
+                        .collect(Collectors.toList());
+                log.info(String.valueOf(tokens));
+                for(String token : filtered){
+                    Matcher matcher = pattern.matcher(token);
+                    OrderWord identifier = new OrderWord();
+                    identifier.setIndexOfWord(0);
+                    identifier.setDocId(order.getId());
+                    identifier.setLength(product.getDescription().length());
+                    identifier.setWord(matcher.replaceAll(""));
+                    ordersWordsRepository.save(identifier);
+                }
+            }
 
             OrderWord identifier1 = new OrderWord();
             identifier1.setIndexOfWord(1);
@@ -175,7 +189,7 @@ public class OrderService {
             OrderWord identifier5 = new OrderWord();
             identifier5.setIndexOfWord(5);
             identifier5.setDocId(order.getId());
-            identifier5.setWord(order.getId().toString());
+            identifier5.setWord(product.getName());
             identifier5.setLength(product.getDescription().length());
             ordersWordsRepository.save(identifier5);
         });

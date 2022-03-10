@@ -123,6 +123,24 @@
 		</dependency>
 
 		<dependency>
+			<groupId>ai.djl.opencv</groupId>
+			<artifactId>opencv</artifactId>
+			<version>0.15.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ai.djl.huggingface</groupId>
+			<artifactId>tokenizers</artifactId>
+			<version>0.15.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ai.djl.sentencepiece</groupId>
+			<artifactId>sentencepiece</artifactId>
+			<version>0.15.0</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.apache.opennlp</groupId>
 			<artifactId>opennlp-tools</artifactId>
 			<version>1.9.4</version>
